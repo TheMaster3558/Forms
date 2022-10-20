@@ -5,5 +5,6 @@ from discord.ext import commands
 
 class FormsBot(discord.Client):
     def __init__(self):
-        self.tree = app_commands.CommandTree(client)
+        intents = discord.Intents.default()
+        super().__init__(command_prefix=[], intents=intents)
         
