@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from .database import init_db
 from .finish_form import check_database
+from .help import HelpCommand
 
 
 async def add_brackets_to_config() -> None:
@@ -47,7 +48,7 @@ class FormsBot(commands.Bot):
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
-        super().__init__(command_prefix=commands.when_mentioned, intents=intents)
+        super().__init__(command_prefix=commands.when_mentioned, intents=intents, help_command=HelpCommand())
 
     async def setup_hook(self) -> None:
         await self.load_extension("forms.commands")
