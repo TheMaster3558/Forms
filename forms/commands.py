@@ -65,7 +65,7 @@ async def form_create(
     else:
         embed.set_footer(text='This form is not anonymous')
 
-    view = FormView(view.data, finishes_timestamp, ctx.bot.loop)
+    view = FormView(view.data, finishes_at=finishes_timestamp, loop=ctx.bot.loop)
     message = await channel.send(embed=embed, view=view)
     view.message = message
 
@@ -79,6 +79,7 @@ async def form_create(
         pool,
         name=name,
         form_id=message.id,
+        channel_id=channel.id,
         response_channel_id=responses_channel and responses_channel.id,
         creator_id=ctx.author.id,
         finishes_at=finishes_timestamp,

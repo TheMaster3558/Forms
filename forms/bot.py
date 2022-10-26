@@ -56,6 +56,7 @@ class FormsBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         await self.load_extension('forms.commands')
+        await self.load_extension('forms.views')
         await self.load_extension('jishaku')
         check_database.start(self)
 

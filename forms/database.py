@@ -29,6 +29,7 @@ async def create_form(
     *,
     name: str,
     form_id: int,
+    channel_id: int,
     response_channel_id: int | None,
     creator_id: int,
     finishes_at: int,
@@ -40,10 +41,11 @@ async def create_form(
         async with conn.transaction():
             await conn.execute(
                 '''
-                INSERT INTO forms VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO forms VALUES ($1, $2, $3, $4, $5, $6)
                 ''',
                 name,
                 form_id,
+                channel_id,
                 response_channel_id,
                 creator_id,
                 finishes_at,
@@ -108,13 +110,24 @@ async def get_finished(pool: asyncpg.Pool, *, now: int) -> list[asyncpg.Record]:
         )
 
 
+async def get_forms(pool: asyncpg.Pool) -> Iterable[asyncpg.Record]:
+    conn: asyncpg.Connection
+
+    async with pool.acquire() as conn:
+        return await conn.fetch(
+            '''
+            SELECT form_id, finishes_at FROM forms
+            '''
+        )
+
+
 async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> list[asyncpg.Record]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
         return await conn.fetch(
             '''
-            SELECT question_id, question_name FROM questions WHERE form_id = $1
+            SELECT question_id, question_name, input_type FROM questions WHERE form_id = $1
             ''',
             form_id,
         )

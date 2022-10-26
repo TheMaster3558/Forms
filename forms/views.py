@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import discord
 
 from .constants import COLOR
-from .database import get_responses_channel, insert_responses
+from .database import get_forms, get_responses_channel, get_questions, insert_responses
+
+if TYPE_CHECKING:
+    from .bot import FormsBot
 
 
 class QuestionsModal(discord.ui.Modal, title='Create a Question'):
@@ -160,7 +163,7 @@ class FormView(discord.ui.View):
     message: discord.Message
 
     def __init__(
-        self, data: dict[str, int], finishes_at: float, loop: asyncio.AbstractEventLoop
+        self, data: dict[str, int], *, finishes_at: int, loop: asyncio.AbstractEventLoop
     ):
         super().__init__(timeout=None)
         self.data = data
@@ -177,3 +180,18 @@ class FormView(discord.ui.View):
         title = interaction.message.embeds[0].title
         modal = FormModal(title, self.data, interaction.message.id)
         await interaction.response.send_modal(modal)
+
+
+async def add_persistent_views(bot: FormsBot) -> None:
+    pool = bot.pool
+
+    for form in await get_forms(pool):
+        form = form['form_id']
+        data: dict[str, int] = {question['question_name']: question['input_type'] for question in await get_questions(pool, form_id=form_id)}
+        view = FormView(data, finishes_at=form['finishes_at'], loop=bot.loop)
+        bot.add_view(view, message_id=form['form_id'])
+
+
+async def setup(bot: FormsBot) -> None:
+    await add_persistent_views(bot)
+
