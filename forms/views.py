@@ -187,7 +187,7 @@ async def add_persistent_views(bot: FormsBot) -> None:
 
     for form in await get_forms(pool):
         form = form['form_id']
-        data: dict[str, int] = {question['question_name']: question['input_type'] for question in await get_questions(pool, form_id=form_id)}
+        data: dict[str, int] = {question['question_name']: question['input_type'] for question in await get_questions(pool, form_id=form['form_id'])}
         view = FormView(data, finishes_at=form['finishes_at'], loop=bot.loop)
         bot.add_view(view, message_id=form['form_id'])
 
