@@ -9,7 +9,7 @@ async def init_db(pool: asyncpg.Pool) -> None:
         async with conn.transaction():
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, response_channel_id bigint, creator_id bigint, finishes_at int)
+                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, channel_id bigint, response_channel_id bigint, creator_id bigint, finishes_at int)
                 '''
             )
             await conn.execute(
@@ -60,6 +60,19 @@ async def create_form(
                 ''',
                 data,
             )
+
+
+async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, int]:
+    conn: asyncpg.Connection
+
+    async with pool.acquire() as conn:
+        record = await conn.fetchrow(
+            '''
+            SELECT channel_id FROM forms WHERE form_id = $1
+            ''',
+            form_id
+        )
+        return form_id, record['channel_id']
 
 
 async def insert_responses(

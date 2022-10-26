@@ -173,7 +173,7 @@ class FormView(discord.ui.View):
         self.start_form.disabled = True
         await self.message.edit(view=self)
 
-    @discord.ui.button(label='Start Form', style=discord.ButtonStyle.gray)
+    @discord.ui.button(label='Start Form', style=discord.ButtonStyle.gray, custom_id='start_form')
     async def start_form(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:

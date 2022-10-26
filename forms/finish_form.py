@@ -14,6 +14,7 @@ from .database import (
     get_questions,
     get_responses,
     get_responses_channel,
+    get_origin_message
 )
 
 if TYPE_CHECKING:
@@ -22,7 +23,6 @@ if TYPE_CHECKING:
 
 
 async def finish_form(
-    pool: asyncpg.Pool,
     bot: FormsBot,
     *,
     form_id: int,
@@ -33,9 +33,9 @@ async def finish_form(
     responses: dict[int, list[asyncpg.Record]] = {}
     questions: dict[int, str] = {}
 
-    for question in await get_questions(pool, form_id=form_id):
+    for question in await get_questions(bot.pool, form_id=form_id):
         questions[question['question_id']] = question['question_name']
-        for response in await get_responses(pool, question_id=question['question_id']):
+        for response in await get_responses(bot.pool, question_id=question['question_id']):
             timestamp = response['response_time']
             responses.setdefault(timestamp, [])
             responses[timestamp].append(response)
@@ -64,7 +64,7 @@ async def finish_form(
         color=COLOR,
     )
 
-    response_channel_id = await get_responses_channel(pool, form_id=form_id)
+    response_channel_id = await get_responses_channel(bot.pool, form_id=form_id)
 
     if channel is None:
         if response_channel_id is None:
@@ -80,18 +80,24 @@ async def finish_form(
             except discord.NotFound:
                 return
     await channel.send(embed=embed, file=file)
-    await delete_form(pool, form_id=form_id)
+    await delete_form(bot.pool, form_id=form_id)
+
+    message_id, channel_id = await get_origin_message(bot.pool, form_id=form_id)
+    channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
+    message = await channel.fetch_message(message_id)
+
+    view = discord.ui.View.from_message(message)
+    view.children[0].disabled = True  # type: ignore
+    await message.edit(view=view)
 
 
 @tasks.loop(seconds=5)
 async def check_database(bot: FormsBot):
-    pool = bot.pool
     now = int(discord.utils.utcnow().timestamp())
 
-    for form in await get_finished(pool, now=now):
+    for form in await get_finished(bot.pool, now=now):
         bot.loop.create_task(
             finish_form(
-                pool,
                 bot,
                 form_id=form['form_id'],
                 form_name=form['form_name'],
@@ -102,3 +108,11 @@ async def check_database(bot: FormsBot):
 
 async def wait_until_ready(bot: FormsBot):
     await bot.wait_until_ready()
+
+
+async def setup(bot: FormsBot) -> None:
+    check_database.start(bot)
+
+
+async def teardown(bot: FormsBot) -> None:
+    check_database.cancel()
