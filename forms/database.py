@@ -8,19 +8,19 @@ async def init_db(pool: asyncpg.Pool) -> None:
     async with pool.acquire() as conn:
         async with conn.transaction():
             await conn.execute(
-                """
+                '''
                 CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, response_channel_id bigint, creator_id bigint, finishes_at int)
-                """
+                '''
             )
             await conn.execute(
-                """
+                '''
                 CREATE TABLE IF NOT EXISTS questions (form_id bigint, question_id bigint, question_name text, input_type int)
-                """
+                '''
             )
             await conn.execute(
-                """
+                '''
                 CREATE TABLE IF NOT EXISTS responses (question_id bigint, response_time int, response text, username text)
-                """
+                '''
             )
 
 
@@ -39,9 +39,9 @@ async def create_form(
     async with pool.acquire() as conn:
         async with conn.transaction():
             await conn.execute(
-                """
+                '''
                 INSERT INTO forms VALUES ($1, $2, $3, $4, $5)
-                """,
+                ''',
                 name,
                 form_id,
                 response_channel_id,
@@ -53,9 +53,9 @@ async def create_form(
                 for number, (question_name, input_type) in enumerate(questions.items())
             ]
             await conn.executemany(
-                """
+                '''
                 INSERT INTO questions VALUES ($1, $2, $3, $4)
-                """,
+                ''',
                 data,
             )
 
@@ -76,9 +76,9 @@ async def insert_responses(
             for question_id, response in zip(question_ids, responses)
         ]
         await conn.executemany(
-            """
+            '''
             INSERT INTO responses VALUES ($1, $2, $3, $4)
-            """,
+            ''',
             data,
         )
 
@@ -88,12 +88,12 @@ async def get_responses_channel(pool: asyncpg.Pool, *, form_id: int) -> int | No
 
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            """
+            '''
             SELECT response_channel_id FROM forms WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )
-        return row and row["response_channel_id"]
+        return row and row['response_channel_id']
 
 
 async def get_finished(pool: asyncpg.Pool, *, now: int) -> list[asyncpg.Record]:
@@ -101,9 +101,9 @@ async def get_finished(pool: asyncpg.Pool, *, now: int) -> list[asyncpg.Record]:
 
     async with pool.acquire() as conn:
         return await conn.fetch(
-            """
+            '''
             SELECT form_name, form_id, response_channel_id, creator_id FROM forms WHERE $1 > finishes_at
-            """,
+            ''',
             now,
         )
 
@@ -113,9 +113,9 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> list[asyncpg.Rec
 
     async with pool.acquire() as conn:
         return await conn.fetch(
-            """
+            '''
             SELECT question_id, question_name FROM questions WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )
 
@@ -127,9 +127,9 @@ async def get_responses(
 
     async with pool.acquire() as conn:
         return await conn.fetch(
-            """
+            '''
             SELECT question_id, response_time, response, username FROM responses WHERE question_id = $1
-            """,
+            ''',
             question_id,
         )
 
@@ -139,9 +139,9 @@ async def get_form_data(pool: asyncpg.Pool, *, form_id: int) -> asyncpg.Record:
 
     async with pool.acquire() as conn:
         return await conn.fetchrow(
-            """
+            '''
             SELECT form_name, creator_id FROM forms WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )
 
@@ -151,26 +151,26 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
 
     async with pool.acquire() as conn:
         questions = await conn.fetch(
-            """
+            '''
             SELECT question_id FROM questions WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )
         await conn.executemany(
-            """
+            '''
             DELETE FROM responses WHERE question_id = $1
-            """,
-            [(question["question_id"],) for question in questions],
+            ''',
+            [(question['question_id'],) for question in questions],
         )
         await conn.execute(
-            """
+            '''
             DELETE FROM questions WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )
         await conn.execute(
-            """
+            '''
             DELETE FROM forms WHERE form_id = $1
-            """,
+            ''',
             form_id,
         )

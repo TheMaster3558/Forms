@@ -15,18 +15,18 @@ def check_channel_permissions(
     channel: discord.TextChannel, me: discord.Member
 ) -> str | None:
     if not channel.permissions_for(me).send_messages:
-        return f"I ned permission to send messages in {channel.mention}."
+        return f'I ned permission to send messages in {channel.mention}.'
 
 
 def get_datetime_format(dt: datetime.datetime) -> tuple[str, int]:
-    return discord.utils.format_dt(dt, style="R"), int(dt.timestamp())
+    return discord.utils.format_dt(dt, style='R'), int(dt.timestamp())
 
 
-@commands.hybrid_command(name="form", description="Create a form!")
+@commands.hybrid_command(name='form', description='Create a form!')
 @app_commands.describe(
-    name="The name of the form",
-    finishes_in="The hours to finish the form in",
-    anonymous="Whether the form is anonymous",
+    name='The name of the form',
+    finishes_in='The hours to finish the form in',
+    anonymous='Whether the form is anonymous',
 )
 async def form_create(
     ctx: commands.Context,
@@ -44,26 +44,26 @@ async def form_create(
         await ctx.send(needs_permissions, ephemeral=True)
 
     embed = discord.Embed(
-        title=name, description="**Form questions shown below**", color=COLOR
+        title=name, description='**Form questions shown below**', color=COLOR
     )
     view = QuestionsView(ctx.author)
     await ctx.send(embed=embed, view=view, ephemeral=True)
     await view.wait()
 
     if not view.data:
-        await ctx.send("No questions entered. Cancelling.", ephemeral=True)
+        await ctx.send('No questions entered. Cancelling.', ephemeral=True)
         return
 
     finishes_dt = discord.utils.utcnow() + datetime.timedelta(hours=finishes_in)
     finishes_string, finishes_timestamp = get_datetime_format(finishes_dt)
 
     embed = discord.Embed(
-        title=name, description=f"Finishes in {finishes_string}", color=COLOR
+        title=name, description=f'Finishes in {finishes_string}', color=COLOR
     )
     if anonymous:
-        embed.set_footer(text="This form is anonymous")
+        embed.set_footer(text='This form is anonymous')
     else:
-        embed.set_footer(text="This form is not anonymous")
+        embed.set_footer(text='This form is not anonymous')
 
     view = FormView(view.data, finishes_timestamp, ctx.bot.loop)
     message = await channel.send(embed=embed, view=view)
@@ -71,7 +71,7 @@ async def form_create(
 
     if not responses_channel:
         await ctx.send(
-            "Data will be DMed to you. Make sure to turn on DMs!", ephemeral=True
+            'Data will be DMed to you. Make sure to turn on DMs!', ephemeral=True
         )
 
     pool = interaction.client.pool  # type: ignore
@@ -86,10 +86,10 @@ async def form_create(
     )
 
 
-@commands.hybrid_command(name="finish", description="Finish a form early.")
+@commands.hybrid_command(name='finish', description='Finish a form early.')
 @app_commands.describe(
-    message="The link or ID to the message that you can start the form from",
-    send_here="Whether to send the results in this channel or the channel set in /form",
+    message='The link or ID to the message that you can start the form from',
+    send_here='Whether to send the results in this channel or the channel set in /form',
 )
 async def form_finish(
     ctx: commands.Context[FormsBot], message: discord.Message, send_here: bool = False
@@ -98,10 +98,10 @@ async def form_finish(
     form = await get_form_data(pool, form_id=message.id)
 
     if form is None:
-        await ctx.send("That form could not be found.", ephemeral=True)
+        await ctx.send('That form could not be found.', ephemeral=True)
         return
-    if form["creator_id"] != ctx.author.id:
-        await ctx.send("Only the creator of the form can finish it early.")
+    if form['creator_id'] != ctx.author.id:
+        await ctx.send('Only the creator of the form can finish it early.')
         return
 
     channel = ctx.channel if send_here else None
@@ -109,8 +109,8 @@ async def form_finish(
         pool,
         ctx.bot,
         form_id=message.id,
-        form_name=form["form_name"],
-        creator_id=form["creator_id"],
+        form_name=form['form_name'],
+        creator_id=form['creator_id'],
         channel=channel,
     )
 

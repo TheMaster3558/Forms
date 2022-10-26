@@ -9,8 +9,8 @@ from .constants import COLOR
 from .database import get_responses_channel, insert_responses
 
 
-class QuestionsModal(discord.ui.Modal, title="Create a Question"):
-    form_title = discord.ui.TextInput(label="Enter the name of the question")
+class QuestionsModal(discord.ui.Modal, title='Create a Question'):
+    form_title = discord.ui.TextInput(label='Enter the name of the question')
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -41,7 +41,7 @@ class QuestionsView(discord.ui.View):
         return self.creator == interaction.user
 
     @discord.ui.button(
-        label="Add Short Answer Question", style=discord.ButtonStyle.gray
+        label='Add Short Answer Question', style=discord.ButtonStyle.gray
     )
     async def short_answer_question(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
@@ -49,22 +49,22 @@ class QuestionsView(discord.ui.View):
         modal = await self.send_question_create_modal(interaction)
         self.data[modal.form_title.value] = int(discord.TextStyle.short)
         embed = interaction.message.embeds[0].add_field(
-            name=modal.form_title.value, value=f"Type: short"
+            name=modal.form_title.value, value=f'Type: short'
         )
         await interaction.message.edit(embed=embed)
 
-    @discord.ui.button(label="Add Paragraph Question", style=discord.ButtonStyle.gray)
+    @discord.ui.button(label='Add Paragraph Question', style=discord.ButtonStyle.gray)
     async def long_answer_question(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         modal = await self.send_question_create_modal(interaction)
         self.data[modal.form_title.value] = int(discord.TextStyle.long)
         embed = interaction.message.embeds[0].add_field(
-            name=modal.form_title.value, value=f"Type: paragraph"
+            name=modal.form_title.value, value=f'Type: paragraph'
         )
         await interaction.message.edit(embed=embed)
 
-    @discord.ui.button(label="Finish", style=discord.ButtonStyle.green)
+    @discord.ui.button(label='Finish', style=discord.ButtonStyle.green)
     async def finish_questions(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
@@ -76,12 +76,12 @@ class QuestionsView(discord.ui.View):
             child.disabled = True
         await interaction.message.edit(view=self)
 
-    @discord.ui.button(label="Remove Question", style=discord.ButtonStyle.red)
+    @discord.ui.button(label='Remove Question', style=discord.ButtonStyle.red)
     async def remove_question(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         options = [
-            discord.SelectOption(label=name, description=f"Type: {discord.TextStyle(input_type).name}")  # type: ignore
+            discord.SelectOption(label=name, description=f'Type: {discord.TextStyle(input_type).name}')  # type: ignore
             for name, input_type in self.data.items()
         ]
         select = QuestionRemoveSelect(options=options)
@@ -114,7 +114,7 @@ class FormModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.send_message(
-            "Your response has been recorded", ephemeral=True
+            'Your response has been recorded', ephemeral=True
         )
 
         pool = interaction.client.pool  # type: ignore
@@ -128,7 +128,7 @@ class FormModal(discord.ui.Modal):
             question_ids.append(question_id)
             responses.append(response)
 
-        anonymous = "not" not in interaction.message.embeds[0].footer.text
+        anonymous = 'not' not in interaction.message.embeds[0].footer.text
         await insert_responses(
             pool,
             response_time=int(discord.utils.utcnow().timestamp()),
@@ -170,7 +170,7 @@ class FormView(discord.ui.View):
         self.start_form.disabled = True
         await self.message.edit(view=self)
 
-    @discord.ui.button(label="Start Form", style=discord.ButtonStyle.gray)
+    @discord.ui.button(label='Start Form', style=discord.ButtonStyle.gray)
     async def start_form(
         self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:

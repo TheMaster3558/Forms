@@ -14,25 +14,24 @@ class HelpCommand(commands.HelpCommand):
         embed = discord.Embed(
             title=f'{self.context.bot.user.name} Help',
             timestamp=discord.utils.utcnow(),
-            color=COLOR
+            color=COLOR,
         )
         for command in self.context.bot.commands:
             embed.add_field(
                 name=f'`{self.get_command_signature(command)}`',
                 value=command.description,
-                inline=False
+                inline=False,
             )
         await self.context.send(embed=embed)
 
-    async def send_command_help(self, command: commands.Command[None, ..., Any]) -> None:
+    async def send_command_help(
+        self, command: commands.Command[None, ..., Any]
+    ) -> None:
         embed = discord.Embed(
             title=command.name,
             description=f'```{self.get_command_signature(command)}```',
             timestamp=discord.utils.utcnow(),
-            color=COLOR
+            color=COLOR,
         )
-        embed.add_field(
-            name='Command Description',
-            value=command.description
-        )
+        embed.add_field(name='Command Description', value=command.description)
         await self.context.send(embed=embed)

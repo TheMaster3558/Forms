@@ -34,9 +34,9 @@ async def finish_form(
     questions: dict[int, str] = {}
 
     for question in await get_questions(pool, form_id=form_id):
-        questions[question["question_id"]] = question["question_name"]
-        for response in await get_responses(pool, question_id=question["question_id"]):
-            timestamp = response["response_time"]
+        questions[question['question_id']] = question['question_name']
+        for response in await get_responses(pool, question_id=question['question_id']):
+            timestamp = response['response_time']
             responses.setdefault(timestamp, [])
             responses[timestamp].append(response)
 
@@ -44,22 +44,22 @@ async def finish_form(
     for timestamp, records in responses.items():
         full_form_response = {}
         for record in records:
-            question_name = questions[record["question_id"]]
-            full_form_response[question_name] = record["response"]
+            question_name = questions[record['question_id']]
+            full_form_response[question_name] = record['response']
 
         data.append(
             {
-                "user": record["username"],  # all records have the same username,
-                "timestamp": timestamp,
-                "question_responses": full_form_response,
+                'user': record['username'],  # all records have the same username,
+                'timestamp': timestamp,
+                'question_responses': full_form_response,
             }
         )
 
     buffer = io.BytesIO(json.dumps(data).encode())
-    file = discord.File(buffer, filename="form.json")
+    file = discord.File(buffer, filename='form.json')
     embed = discord.Embed(
-        title=f"{form_name} has finished!",
-        description="The file attached has JSON data for the form.",
+        title=f'{form_name} has finished!',
+        description='The file attached has JSON data for the form.',
         timestamp=discord.utils.utcnow(),
         color=COLOR,
     )
@@ -93,9 +93,9 @@ async def check_database(bot: FormsBot):
             finish_form(
                 pool,
                 bot,
-                form_id=form["form_id"],
-                form_name=form["form_name"],
-                creator_id=form["creator_id"],
+                form_id=form['form_id'],
+                form_name=form['form_name'],
+                creator_id=form['creator_id'],
             )
         )
 
