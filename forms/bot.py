@@ -3,6 +3,7 @@ import traceback
 import sys
 
 import aiofiles
+import aiointeractions
 import asyncpg
 import discord
 from discord.ext import commands
@@ -55,11 +56,12 @@ class FormsBot(commands.Bot):
             description='Make forms in your server!'
         )
 
+        self.app = aiointeractions.InteractionsApp(self)
+
     async def setup_hook(self) -> None:
         await self.load_extension('forms.commands')
         await self.load_extension('forms.finish_form')
         await self.load_extension('forms.views')
-        await self.load_extension('jishaku')
         check_database.start(self)
 
     async def load_extension(self, name: str, *, package: str | None = None) -> None:
@@ -93,8 +95,7 @@ class FormsBot(commands.Bot):
 
     async def start(self, token: str | None = None, *, reconnect: bool = True) -> None:
         async with self:
-            await self.login(token)
-            await self.connect(reconnect=reconnect)
+            await self.app.start(token)
 
     async def close(self) -> None:
         await self.pool.close()
