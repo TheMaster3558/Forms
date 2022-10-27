@@ -13,6 +13,7 @@ class HelpCommand(commands.HelpCommand):
     async def send_bot_help(self, _: Any) -> None:
         embed = discord.Embed(
             title=f'{self.context.bot.user.name} Help',
+            description=self.context.bot.description,
             timestamp=discord.utils.utcnow(),
             color=COLOR,
         )

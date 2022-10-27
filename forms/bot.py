@@ -52,6 +52,7 @@ class FormsBot(commands.Bot):
             command_prefix=commands.when_mentioned,
             intents=intents,
             help_command=HelpCommand(),
+            description='Make forms in your server!'
         )
 
     async def setup_hook(self) -> None:
@@ -91,8 +92,9 @@ class FormsBot(commands.Bot):
         await super().login(token)
 
     async def start(self, token: str | None = None, *, reconnect: bool = True) -> None:
-        await self.login(token)
-        await self.connect(reconnect=reconnect)
+        async with self:
+            await self.login(token)
+            await self.connect(reconnect=reconnect)
 
     async def close(self) -> None:
         await self.pool.close()
