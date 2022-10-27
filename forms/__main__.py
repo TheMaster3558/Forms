@@ -19,14 +19,36 @@ def main() -> int:
         dest='logging',
         action='store_true',
     )
+    parser.add_argument(
+        '-w',
+        '--web',
+        help='Whether to use aiointeractions.InteractionsApp',
+        default=False,
+        dest='web',
+        action='store_true'
+    )
+    parser.add_argument(
+        '-g',
+        '--gateway',
+        help='Whether to the Discord Gateway',
+        default=False,
+        dest='gateway',
+        action='store_true'
+    )
     args = parser.parse_args()
 
     if args.logging:
         discord.utils.setup_logging()
 
     bot = FormsBot()
-    asyncio.run(bot.start())
 
+    if args.web and args.gateway:
+        raise TypeError('Cannot use both --web and --gateway')
+
+    if args.web:
+        asyncio.run(bot.start_with_web())
+    else:
+        asyncio.run(bot.start_with_gateway())
     return 0
 
 

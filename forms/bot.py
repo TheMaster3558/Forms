@@ -62,6 +62,7 @@ class FormsBot(commands.Bot):
         await self.load_extension('forms.commands')
         await self.load_extension('forms.finish_form')
         await self.load_extension('forms.views')
+        await self.load_extension('jishaku')
         check_database.start(self)
 
     async def load_extension(self, name: str, *, package: str | None = None) -> None:
@@ -93,7 +94,12 @@ class FormsBot(commands.Bot):
 
         await super().login(token)
 
-    async def start(self, token: str | None = None, *, reconnect: bool = True) -> None:
+    async def start_with_gateway(self, token: str | None = None, *, reconnect: bool = True) -> None:
+        async with self:
+            await self.login(token=token)
+            await self.connect(reconnect=reconnect)
+
+    async def start_with_web(self, token: str | None = None):
         async with self:
             await self.app.start(token)
 
