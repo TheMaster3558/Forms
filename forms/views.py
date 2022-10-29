@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Iterable, Self
 
 import discord
 
@@ -10,10 +10,11 @@ from .database import get_forms, get_responses_channel, get_questions, insert_re
 
 if TYPE_CHECKING:
     from .bot import FormsBot
+    from ._types import Item
 
 
 class QuestionsModal(discord.ui.Modal, title='Create a Question'):
-    form_title = discord.ui.TextInput(label='Enter the name of the question')
+    question_name = discord.ui.TextInput(label='Enter the name of the question')
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer()
@@ -28,12 +29,12 @@ class QuestionRemoveSelect(discord.ui.Select):
 class QuestionsView(discord.ui.View):
     def __init__(self, creator: discord.abc.Snowflake):
         super().__init__(timeout=600)
-        self.data: dict[str, int] = {}
+        self.items: list[Item] = []
         self.creator = creator
 
     @staticmethod
     async def send_question_create_modal(
-        interaction: discord.Interaction,
+            interaction: discord.Interaction,
     ) -> QuestionsModal:
         modal = QuestionsModal()
         await interaction.response.send_modal(modal)
@@ -47,29 +48,29 @@ class QuestionsView(discord.ui.View):
         label='Add Short Answer Question', style=discord.ButtonStyle.gray
     )
     async def short_answer_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+            self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         modal = await self.send_question_create_modal(interaction)
-        self.data[modal.form_title.value] = int(discord.TextStyle.short)
+        self.items.append(discord.ui.TextInput(label=modal.question_name.value, style=discord.TextStyle.short))
         embed = interaction.message.embeds[0].add_field(
-            name=modal.form_title.value, value=f'Type: short'
+            name=modal.question_name.value, value=f'Type: short'
         )
         await interaction.message.edit(embed=embed)
 
     @discord.ui.button(label='Add Paragraph Question', style=discord.ButtonStyle.gray)
     async def long_answer_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+            self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         modal = await self.send_question_create_modal(interaction)
-        self.data[modal.form_title.value] = int(discord.TextStyle.long)
+        self.items.append(discord.ui.TextInput(label=modal.question_name.value, style=discord.TextStyle.long))
         embed = interaction.message.embeds[0].add_field(
-            name=modal.form_title.value, value=f'Type: paragraph'
+            name=modal.question_name.value, value=f'Type: paragraph'
         )
         await interaction.message.edit(embed=embed)
 
     @discord.ui.button(label='Finish', style=discord.ButtonStyle.green)
     async def finish_questions(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+            self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         await interaction.response.defer()
         self.stop()
@@ -81,12 +82,15 @@ class QuestionsView(discord.ui.View):
 
     @discord.ui.button(label='Remove Question', style=discord.ButtonStyle.red)
     async def remove_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+            self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
-        options = [
-            discord.SelectOption(label=name, description=f'Type: {discord.TextStyle(input_type).name}')  # type: ignore
-            for name, input_type in self.data.items()
-        ]
+        options: list[discord.SelectOption] = []
+        for item in self.items:
+            if isinstance(item, discord.ui.TextInput):
+                options.append(discord.SelectOption(label=item.label))  # type: ignore
+            elif isinstance(item, discord.ui.Select):
+                options.append(discord.SelectOption(label=item.placeholder))
+
         select = QuestionRemoveSelect(options=options)
         view = discord.ui.View()
         view.add_item(select)
@@ -95,7 +99,14 @@ class QuestionsView(discord.ui.View):
         await view.wait()
 
         question = select.values[0]
-        del self.data[question]
+        for index, item in enumerate(self.items):
+            if isinstance(item, discord.ui.TextInput) and item.label == question:
+                del self.items[index]
+            elif isinstance(item, discord.ui.Select) and item.placeholder == question:
+                del self.items[index]
+            else:
+                continue
+            break
 
         embed = interaction.message.embeds[0]
         for index, field in enumerate(embed.fields):
@@ -106,13 +117,10 @@ class QuestionsView(discord.ui.View):
 
 
 class FormModal(discord.ui.Modal):
-    def __init__(self, title: str, data: dict[str, int], form_id: int):
+    def __init__(self, title: str, items: Iterable[Item], form_id: int):
         super().__init__(title=title)
-        for question, input_type in data.items():
-            text_input = discord.ui.TextInput(
-                label=question, style=discord.TextStyle(input_type)  # type: ignore
-            )
-            self.add_item(text_input)
+        for item in items:
+            self.add_item(item)
         self.form_id = form_id
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -134,7 +142,7 @@ class FormModal(discord.ui.Modal):
         anonymous = 'not' not in interaction.message.embeds[0].footer.text
         await insert_responses(
             pool,
-            response_time=int(discord.utils.utcnow().timestamp()),
+            response_time=discord.utils.utcnow(),
             user=str(interaction.user) if not anonymous else None,
             question_ids=question_ids,
             responses=responses,
@@ -154,7 +162,7 @@ class FormModal(discord.ui.Modal):
                 channel = interaction.guild.get_channel(
                     channel_id
                 ) or await interaction.guild.fetch_channel(channel_id)
-            except discord.NotFound:
+            except discord.HTTPException:
                 return
             await channel.send(embed=embed)
 
@@ -163,10 +171,10 @@ class FormView(discord.ui.View):
     message: discord.Message
 
     def __init__(
-        self, data: dict[str, int], *, finishes_at: int, loop: asyncio.AbstractEventLoop
+            self, items: Iterable[Item], *, finishes_at: float, loop: asyncio.AbstractEventLoop
     ):
         super().__init__(timeout=None)
-        self.data = data
+        self.items = items
         loop.call_at(finishes_at, loop.create_task, self.disable())
 
     async def disable(self) -> None:
@@ -175,10 +183,10 @@ class FormView(discord.ui.View):
 
     @discord.ui.button(label='Start Form', style=discord.ButtonStyle.gray, custom_id='start_form')
     async def start_form(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+            self, interaction: discord.Interaction, button: discord.ui.Button[Self]
     ) -> None:
         title = interaction.message.embeds[0].title
-        modal = FormModal(title, self.data, interaction.message.id)
+        modal = FormModal(title, self.items, interaction.message.id)
         await interaction.response.send_modal(modal)
 
 
@@ -186,12 +194,10 @@ async def add_persistent_views(bot: FormsBot) -> None:
     pool = bot.pool
 
     for form in await get_forms(pool):
-        form = form['form_id']
-        data: dict[str, int] = {question['question_name']: question['input_type'] for question in await get_questions(pool, form_id=form['form_id'])}
-        view = FormView(data, finishes_at=form['finishes_at'], loop=bot.loop)
+        items = [item async for _, item in get_questions(pool, form_id=form['form_id'])]
+        view = FormView(items, finishes_at=form['finishes_at'].timestamp(), loop=bot.loop)
         bot.add_view(view, message_id=form['form_id'])
 
 
 async def setup(bot: FormsBot) -> None:
     await add_persistent_views(bot)
-

@@ -1,5 +1,12 @@
+from __future__ import annotations
+
 import asyncpg
-from typing import Iterable
+import discord
+from typing import TYPE_CHECKING, AsyncGenerator, Iterable
+
+if TYPE_CHECKING:
+    import datetime
+    from ._types import Item
 
 
 async def init_db(pool: asyncpg.Pool) -> None:
@@ -9,17 +16,27 @@ async def init_db(pool: asyncpg.Pool) -> None:
         async with conn.transaction():
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, channel_id bigint, response_channel_id bigint, creator_id bigint, finishes_at int)
+                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, channel_id bigint, response_channel_id bigint, creator_id bigint, finishes_at timestamp with time zone)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS questions (form_id bigint, question_id bigint, question_name text, input_type int)
+                CREATE TABLE IF NOT EXISTS questions (form_id bigint, question_id bigint, item_type smallint)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS responses (question_id bigint, response_time int, response text, username text)
+                CREATE TABLE IF NOT EXISTS textinputs (question_id bigint, input_name text, input_type smallint)
+                '''
+            )
+            await conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS selects (question_id bigint, labels text, descriptions text)
+                '''
+            )
+            await conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS responses (question_id bigint, response_time timestamp with time zone, response text, username text)
                 '''
             )
 
@@ -32,8 +49,8 @@ async def create_form(
     channel_id: int,
     response_channel_id: int | None,
     creator_id: int,
-    finishes_at: int,
-    questions: dict[str, int],
+    finishes_at: datetime.datetime,
+    questions: list[Item],
 ) -> None:
     conn: asyncpg.Connection
 
@@ -50,16 +67,37 @@ async def create_form(
                 creator_id,
                 finishes_at,
             )
-            data = [
-                (form_id, form_id + number, question_name, input_type)
-                for number, (question_name, input_type) in enumerate(questions.items())
-            ]
-            await conn.executemany(
-                '''
-                INSERT INTO questions VALUES ($1, $2, $3, $4)
-                ''',
-                data,
-            )
+            for number, question in enumerate(questions):
+                if isinstance(question, discord.ui.TextInput):
+                    await conn.execute(
+                        '''
+                        INSERT INTO textinputs VALUES ($1, $2, $3)
+                        ''',
+                        form_id + number,
+                        question.label,
+                        int(question.style),
+                    )
+                    input_type = 0
+                elif isinstance(question, discord.ui.Select):
+                    await conn.execute(
+                        '''
+                        INSERT INTO selects VALUES ($1, $2, $3, $4)
+                        ''',
+                        form_id + number,
+                        [option.label for option in question.options],
+                        [option.description for option in question.options],
+                    )
+                    input_type = 1
+                else:
+                    continue
+                await conn.execute(
+                    '''
+                    INSERT INTO questions VALUES ($1, $2, $3)
+                    ''',
+                    form_id,
+                    form_id + number,
+                    input_type
+                )
 
 
 async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, int]:
@@ -78,7 +116,7 @@ async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, 
 async def insert_responses(
     pool: asyncpg.Pool,
     *,
-    response_time: int,
+    response_time: datetime.datetime,
     user: str,
     question_ids: Iterable[int],
     responses: Iterable[str],
@@ -111,7 +149,7 @@ async def get_responses_channel(pool: asyncpg.Pool, *, form_id: int) -> int | No
         return row and row['response_channel_id']
 
 
-async def get_finished(pool: asyncpg.Pool, *, now: int) -> list[asyncpg.Record]:
+async def get_finished(pool: asyncpg.Pool) -> list[asyncpg.Record]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -119,7 +157,7 @@ async def get_finished(pool: asyncpg.Pool, *, now: int) -> list[asyncpg.Record]:
             '''
             SELECT form_name, form_id, response_channel_id, creator_id FROM forms WHERE $1 > finishes_at
             ''',
-            now,
+            discord.utils.utcnow()
         )
 
 
@@ -134,16 +172,41 @@ async def get_forms(pool: asyncpg.Pool) -> Iterable[asyncpg.Record]:
         )
 
 
-async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> list[asyncpg.Record]:
+async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[tuple[int, Item], None]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
-        return await conn.fetch(
+        questions = await conn.fetch(
             '''
-            SELECT question_id, question_name, input_type FROM questions WHERE form_id = $1
+            SELECT question_id, item_type FROM questions WHERE form_id = $1 ORDER BY question_id DESC
             ''',
             form_id,
         )
+        for question in questions:
+            match question['item_type']:
+                case 0:
+                    record = await conn.fetchrow(
+                        '''
+                        SELECT input_name, input_type FROM textinputs WHERE question_id = $1
+                        ''',
+                        question['question_id']
+                    )
+                    item = discord.ui.TextInput(label=record['input_name'], style=discord.TextStyle(record['input_type']))
+                case 1:
+                    record = await conn.fetchrow(
+                        '''
+                        SELECT labels, descriptions FROM selects WHERE question_id = $1
+                        ''',
+                        question['question_id']
+                    )
+                    item = discord.ui.Select(
+                        options=[
+                            discord.SelectOption(label=label, description=description) for label, description in zip(record['labels'], record['descriptions'])
+                        ]
+                    )
+                case _:
+                    continue
+            yield question['question_id'], item
 
 
 async def get_responses(

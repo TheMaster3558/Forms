@@ -1,6 +1,7 @@
 import json
 import traceback
 import sys
+from typing import Any, Awaitable, Callable, TypeVar
 
 import aiofiles
 import aiointeractions
@@ -10,7 +11,10 @@ from discord.ext import commands
 
 from .database import init_db
 from .finish_form import check_database
-from .help import HelpCommand
+from .commands.help_commands import HelpCommand
+
+
+T = TypeVar('T')
 
 
 async def add_brackets_to_config() -> None:
@@ -18,7 +22,7 @@ async def add_brackets_to_config() -> None:
         await f.write('{}')
 
 
-async def get_config_data() -> dict[str, str | int]:
+async def get_config_data() -> dict[str, Any]:
     async with aiofiles.open('./forms/config.json', 'r') as f:
         raw = await f.read()
     try:
@@ -28,20 +32,10 @@ async def get_config_data() -> dict[str, str | int]:
         return await get_config_data()
 
 
-async def write_config_data(data: dict[str, str | int]) -> None:
+async def write_config_data(data: dict[str, Any]) -> None:
     dumped = json.dumps(data, indent=4)
     async with aiofiles.open('./forms/config.json', 'w') as f:
         await f.write(dumped)
-
-
-def get_individual_data(
-    name: str, data: dict[str, str | int], default: str | int | None
-) -> str | int:
-    if name not in data and default is None:
-        raise TypeError(f'No {name} provided, add it in the config file')
-    elif default:
-        return default
-    return data[name]
 
 
 class FormsBot(commands.Bot):
@@ -72,20 +66,19 @@ class FormsBot(commands.Bot):
             print(f'Failed to load extension: {name}', file=sys.stderr)
             traceback.print_exception(exc, file=sys.stderr)
 
+    async def getch(self, fetch: Callable[[int], Awaitable[T]], obj_id: int) -> T:
+        get: Callable[[int], T] = getattr(self, fetch.__name__.replace('fetch', 'get'))
+        return get(obj_id) or await fetch(obj_id)
+
     async def login(
-        self,
-        token: str | None = None,
-        host: str | None = None,
-        port: int | None = None,
-        user: str | None = None,
-        password: str | None = None,
+        self, *_
     ) -> None:
         data = await get_config_data()
-        token = get_individual_data('token', data, token)
-        host = get_individual_data('host', data, host)
-        port = get_individual_data('port', data, port)
-        user = get_individual_data('user', data, user)
-        password = get_individual_data('password', data, password)
+        token: str = data['token']
+        host: str = data['host']
+        port: int = data['port']
+        user: str = data['user']
+        password: str = data['password']
 
         self.pool = await asyncpg.create_pool(
             host=host, port=port, user=user, password=password
@@ -94,9 +87,9 @@ class FormsBot(commands.Bot):
 
         await super().login(token)
 
-    async def start_with_gateway(self, token: str | None = None, *, reconnect: bool = True) -> None:
+    async def start_with_gateway(self, reconnect: bool = True) -> None:
         async with self:
-            await self.login(token=token)
+            await self.login()
             await self.connect(reconnect=reconnect)
 
     async def start_with_web(self, token: str | None = None):

@@ -33,16 +33,22 @@ async def finish_form(
     responses: dict[int, list[asyncpg.Record]] = {}
     questions: dict[int, str] = {}
 
-    for question in await get_questions(bot.pool, form_id=form_id):
-        questions[question['question_id']] = question['question_name']
-        for response in await get_responses(bot.pool, question_id=question['question_id']):
-            timestamp = response['response_time']
+    async for question_id, question in get_questions(bot.pool, form_id=form_id):
+        if isinstance(question, discord.ui.TextInput):
+            questions[question_id] = question.label
+        elif isinstance(question, discord.ui.Select):
+            assert question.placeholder is not None
+            questions[question_id] = question.placeholder
+        for response in await get_responses(bot.pool, question_id=question_id):
+            timestamp = response['response_time'].timestamp()
             responses.setdefault(timestamp, [])
             responses[timestamp].append(response)
 
     data = []
     for timestamp, records in responses.items():
         full_form_response = {}
+
+        record = {}
         for record in records:
             question_name = questions[record['question_id']]
             full_form_response[question_name] = record['response']
@@ -69,33 +75,33 @@ async def finish_form(
     if channel is None:
         if response_channel_id is None:
             try:
-                channel = bot.get_user(creator_id) or await bot.fetch_user(creator_id)
-            except discord.NotFound:
+                channel = await bot.getch(bot.fetch_user, creator_id)
+            except discord.HTTPException:
                 return
         else:
             try:
-                channel = bot.get_channel(
-                    response_channel_id
-                ) or await bot.fetch_channel(response_channel_id)
-            except discord.NotFound:
+                channel = await bot.getch(bot.fetch_channel, response_channel_id)
+            except discord.HTTPException:
                 return
+
     await channel.send(embed=embed, file=file)
+
+    try:
+        message_id, channel_id = await get_origin_message(bot.pool, form_id=form_id)
+        message_channel: discord.abc.Messageable = await bot.getch(bot.fetch_channel, channel_id)
+        message = await message_channel.fetch_message(message_id)
+
+        view = discord.ui.View.from_message(message)
+        view.children[0].disabled = True  # type: ignore
+        await message.edit(view=view)
+    except discord.HTTPException:
+        pass
     await delete_form(bot.pool, form_id=form_id)
-
-    message_id, channel_id = await get_origin_message(bot.pool, form_id=form_id)
-    channel = bot.get_channel(channel_id) or await bot.fetch_channel(channel_id)
-    message = await channel.fetch_message(message_id)
-
-    view = discord.ui.View.from_message(message)
-    view.children[0].disabled = True  # type: ignore
-    await message.edit(view=view)
 
 
 @tasks.loop(seconds=5)
 async def check_database(bot: FormsBot):
-    now = int(discord.utils.utcnow().timestamp())
-
-    for form in await get_finished(bot.pool, now=now):
+    for form in await get_finished(bot.pool):
         bot.loop.create_task(
             finish_form(
                 bot,

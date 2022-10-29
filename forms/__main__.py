@@ -31,7 +31,7 @@ def main() -> int:
         '-g',
         '--gateway',
         help='Whether to the Discord Gateway',
-        default=False,
+        default=True,
         dest='gateway',
         action='store_true'
     )

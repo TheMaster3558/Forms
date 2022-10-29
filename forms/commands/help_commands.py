@@ -3,7 +3,7 @@ from typing import Any
 import discord
 from discord.ext import commands
 
-from .constants import COLOR
+from forms.constants import COLOR
 
 
 class HelpCommand(commands.HelpCommand):
