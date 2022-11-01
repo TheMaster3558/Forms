@@ -11,10 +11,10 @@ from discord.ext import commands
 
 from .database import init_db
 from .finish_form import check_database
-from .commands.help_commands import HelpCommand
+from .commands.help import HelpCommand
 
 
-T = TypeVar('T')
+R = TypeVar('R')
 
 
 async def add_brackets_to_config() -> None:
@@ -47,7 +47,7 @@ class FormsBot(commands.Bot):
             command_prefix=commands.when_mentioned,
             intents=intents,
             help_command=HelpCommand(),
-            description='Make forms in your server!'
+            description='Make forms in your server!',
         )
 
         self.app = aiointeractions.InteractionsApp(self)
@@ -66,19 +66,20 @@ class FormsBot(commands.Bot):
             print(f'Failed to load extension: {name}', file=sys.stderr)
             traceback.print_exception(exc, file=sys.stderr)
 
-    async def getch(self, fetch: Callable[[int], Awaitable[T]], obj_id: int) -> T:
-        get: Callable[[int], T] = getattr(self, fetch.__name__.replace('fetch', 'get'))
+    async def getch(self, fetch: Callable[[int], Awaitable[R]], obj_id: int) -> R:
+        get: Callable[[int], R] = getattr(self, fetch.__name__.replace('fetch', 'get'))
         return get(obj_id) or await fetch(obj_id)
 
-    async def login(
-        self, *_
-    ) -> None:
-        data = await get_config_data()
-        token: str = data['token']
-        host: str = data['host']
-        port: int = data['port']
-        user: str = data['user']
-        password: str = data['password']
+    async def login(self, *_: Any) -> None:
+        try:
+            data = await get_config_data()
+            token: str = data['token']
+            host: str = data['host']
+            port: int = data['port']
+            user: str = data['user']
+            password: str = data['password']
+        except KeyError as e:
+            raise Exception(f'Missing key in config file: {e.args[0]}') from e
 
         self.pool = await asyncpg.create_pool(
             host=host, port=port, user=user, password=password
@@ -87,14 +88,14 @@ class FormsBot(commands.Bot):
 
         await super().login(token)
 
-    async def start_with_gateway(self, reconnect: bool = True) -> None:
+    async def run_with_gateway(self, reconnect: bool = True) -> None:
         async with self:
             await self.login()
             await self.connect(reconnect=reconnect)
 
-    async def start_with_web(self, token: str | None = None):
+    async def run_with_web(self):
         async with self:
-            await self.app.start(token)
+            await self.app.start('')  # token is grabbed from config file
 
     async def close(self) -> None:
         await self.pool.close()

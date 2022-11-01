@@ -25,7 +25,7 @@ def main() -> int:
         help='Whether to use aiointeractions.InteractionsApp',
         default=False,
         dest='web',
-        action='store_true'
+        action='store_true',
     )
     parser.add_argument(
         '-g',
@@ -33,7 +33,7 @@ def main() -> int:
         help='Whether to the Discord Gateway',
         default=True,
         dest='gateway',
-        action='store_true'
+        action='store_true',
     )
     args = parser.parse_args()
 
@@ -46,9 +46,9 @@ def main() -> int:
         raise TypeError('Cannot use both --web and --gateway')
 
     if args.web:
-        asyncio.run(bot.start_with_web())
+        asyncio.run(bot.run_with_web())
     else:
-        asyncio.run(bot.start_with_gateway())
+        asyncio.run(bot.run_with_gateway())
     return 0
 
 

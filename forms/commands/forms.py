@@ -10,7 +10,7 @@ from discord import app_commands
 from ..constants import COLOR
 from ..database import create_form, get_form_data
 from ..finish_form import finish_form
-from ..views import FormView, QuestionsView
+from ..views import FormView, QuestionsView, PermissionsView
 
 if TYPE_CHECKING:
     from ..bot import FormsBot
@@ -26,9 +26,13 @@ def check_channel_permissions(
 @commands.hybrid_command(name='form', description='Create a form!')
 @app_commands.describe(
     name='The name of the form',
+    channel='The channel to send the form in',
     finishes_in='The hours to finish the form in',
+    response_channel='The channel to send the form responses in. Defaults to DMs.',
     anonymous='Whether the form is anonymous',
 )
+@commands.has_permissions(administrator=True)
+@app_commands.default_permissions(administrator=True)
 async def form_create_command(
     ctx: commands.Context[FormsBot],
     name: str,
@@ -44,30 +48,37 @@ async def form_create_command(
     ):
         await ctx.send(needs_permissions, ephemeral=True)
 
-    embed = discord.Embed(
+    questions_embed = discord.Embed(
         title=name, description='**Form questions shown below**', color=COLOR
     )
-    view = QuestionsView(ctx.author)
-    await ctx.send(embed=embed, view=view)
-    await view.wait()
+    questions_view = QuestionsView(ctx.author)
+    await ctx.send(embed=questions_embed, view=questions_view)
+    await questions_view.wait()
 
-    if not view.items:
+    if not questions_view.items:
         await ctx.send('No questions entered. Cancelling.', ephemeral=True)
         return
+
+    permissions_embed = discord.Embed(title='Who can take this form?', color=COLOR)
+    permissions_view = PermissionsView()
+    await ctx.send(embed=permissions_embed, view=permissions_view)
+    await permissions_view.wait()
 
     finishes_dt = discord.utils.utcnow() + datetime.timedelta(hours=finishes_in)
     finishes_string = discord.utils.format_dt(finishes_dt, style='R')
 
-    embed = discord.Embed(
+    form_embed = discord.Embed(
         title=name, description=f'Finishes in {finishes_string}', color=COLOR
     )
     if anonymous:
-        embed.set_footer(text='This form is anonymous')
+        form_embed.set_footer(text='This form is anonymous')
     else:
-        embed.set_footer(text='This form is not anonymous')
+        form_embed.set_footer(text='This form is not anonymous')
 
-    view = FormView(view.items, finishes_at=finishes_dt.timestamp(), loop=ctx.bot.loop)
-    message = await channel.send(embed=embed, view=view)
+    view = FormView(
+        questions_view.items, finishes_at=finishes_dt.timestamp(), loop=ctx.bot.loop
+    )
+    message = await channel.send(embed=form_embed, view=view)
     view.message = message
 
     if not responses_channel:
@@ -84,6 +95,9 @@ async def form_create_command(
         creator_id=ctx.author.id,
         finishes_at=finishes_dt,
         questions=view.items,
+        allowed_users=permissions_view.users,
+        allowed_roles=permissions_view.roles,
+        allow_everyone=permissions_view.everyone,
     )
 
 

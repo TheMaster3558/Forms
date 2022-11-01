@@ -1,5 +1,4 @@
-import discord
-from typing import Any, Final
+from typing import Final
 
 
-COLOR: Final[int] = 0x13D0B0
+COLOR: Final[int] = 0x2F3136

@@ -31,12 +31,17 @@ async def init_db(pool: asyncpg.Pool) -> None:
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS selects (question_id bigint, labels text, descriptions text)
+                CREATE TABLE IF NOT EXISTS selects (question_id bigint, labels text[], descriptions text[])
                 '''
             )
             await conn.execute(
                 '''
                 CREATE TABLE IF NOT EXISTS responses (question_id bigint, response_time timestamp with time zone, response text, username text)
+                '''
+            )
+            await conn.execute(
+                '''
+                CREATE TABLE IF NOT EXISTS permissions (form_id bigint, users bigint[], roles bigint[], everyone bool)
                 '''
             )
 
@@ -50,7 +55,10 @@ async def create_form(
     response_channel_id: int | None,
     creator_id: int,
     finishes_at: datetime.datetime,
-    questions: list[Item],
+    questions: Iterable[Item],
+    allowed_users: list[int],
+    allowed_roles: list[int],
+    allow_everyone: bool
 ) -> None:
     conn: asyncpg.Connection
 
@@ -98,19 +106,28 @@ async def create_form(
                     form_id + number,
                     input_type
                 )
+            await conn.execute(
+                '''
+                INSERT INTO permissions VALUES ($1, $2, $3, $4)
+                ''',
+                form_id,
+                allowed_users,
+                allowed_roles,
+                allow_everyone
+            )
 
 
 async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, int]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
-        record = await conn.fetchrow(
+        row = await conn.fetchrow(
             '''
             SELECT channel_id FROM forms WHERE form_id = $1
             ''',
             form_id
         )
-        return form_id, record['channel_id']
+        return form_id, row['channel_id']
 
 
 async def insert_responses(
@@ -185,15 +202,15 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
         for question in questions:
             match question['item_type']:
                 case 0:
-                    record = await conn.fetchrow(
+                    row = await conn.fetchrow(
                         '''
                         SELECT input_name, input_type FROM textinputs WHERE question_id = $1
                         ''',
                         question['question_id']
                     )
-                    item = discord.ui.TextInput(label=record['input_name'], style=discord.TextStyle(record['input_type']))
+                    item = discord.ui.TextInput(label=row['input_name'], style=discord.TextStyle(row['input_type']))
                 case 1:
-                    record = await conn.fetchrow(
+                    row = await conn.fetchrow(
                         '''
                         SELECT labels, descriptions FROM selects WHERE question_id = $1
                         ''',
@@ -201,7 +218,7 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
                     )
                     item = discord.ui.Select(
                         options=[
-                            discord.SelectOption(label=label, description=description) for label, description in zip(record['labels'], record['descriptions'])
+                            discord.SelectOption(label=label, description=description) for label, description in zip(row['labels'], row['descriptions'])
                         ]
                     )
                 case _:
@@ -263,3 +280,16 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
             ''',
             form_id,
         )
+
+
+async def get_permissions(pool: asyncpg.Pool, *, form_id: int) -> tuple[list[int], list[int], bool]:
+    conn: asyncpg.Connection
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            '''
+            SELECT users, roles, everyone FROM permissions WHERE form_id = $1
+            ''',
+            form_id
+        )
+        return row['users'], row['roles'], row['everyone']
