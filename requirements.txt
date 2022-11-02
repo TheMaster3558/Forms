@@ -1,0 +1,6 @@
+git+https://github.com/Rapptz/discord.py
+asyncpg
+aiofiles
+aiointeractions
+jishaku; python_version < "3.11"
+matplotlib
