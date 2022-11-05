@@ -25,9 +25,10 @@ async def error_handler(
         )
     else:
         channel = ctx.bot.error_channel
+        formatted = '\n'.join(traceback.format_exception(error))
         embed = discord.Embed(
             title='⚠Error⚠',
-            description=f'```py\n{traceback.format_exception(error)}\n```',
+            description=f'```py\n{formatted}\n```',
         )
 
     embed.color = discord.Color.red()
