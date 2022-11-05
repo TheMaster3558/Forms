@@ -1,36 +1,9 @@
-Welcome to Forms's documentation!
+Welcome to Forms documentation!
 =================================
 
-Help Command
-------------
-``help [command=None]``
 
-The help command for this bot.
-
-Parameters
-~~~~~~~~~~
-command: Optional[``Text``]
-    The command to get help with.
-
-
-.. note::
-    You cannot use this as a slash command. To invoke this use ``@Forms help``.
-
-
-Info Command
-------------
-``info``
-
-Get information about the bot.
-
-Parameters
-~~~~~~~~~~
-This command has no parameters.
-
-
-Form Commands
--------------
 ``form <name> <channel> [finishes_in=1] [responses_channel=None] [anonymous=False]``
+------------------------------------------------------------------------------------
 
 Create a form!
 
@@ -52,7 +25,11 @@ anonymous: Optional[``Boolean``]
     Whether the form is anonymous.
 
 
+------------------------------
+
+
 ``finish <message> [send_here=False]``
+--------------------------------------
 
 Finish a form early.
 
@@ -63,6 +40,34 @@ message: Required[``MessageLink`` or ``MessageID``]
 
 send_here: Optional[``Boolean``]
     Whether to send the results in this channel.
+
+------------------------------
+
+
+``help [command=None]``
+-----------------------
+
+The help command for this bot.
+
+Parameters
+~~~~~~~~~~
+command: Optional[``Text``]
+    The command to get help with.
+
+------------------------------
+
+
+``info``
+--------
+
+Get information about the bot.
+
+Parameters
+~~~~~~~~~~
+This command has no parameters.
+
+
+------------------------------
 
 
 Form Commands Walk through

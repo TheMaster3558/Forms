@@ -6,6 +6,7 @@ import discord
 from discord.ext import commands
 
 from ..constants import COLOR
+from ..views import LinksView
 
 if TYPE_CHECKING:
     from ..bot import FormsBot
@@ -25,4 +26,6 @@ async def info_command(ctx: commands.Context[FormsBot]) -> None:
         name='Bot Created',
         value=discord.utils.format_dt(ctx.bot.user.created_at, style='R'),
     )
-    await ctx.send(embed=embed)
+
+    view = LinksView()
+    await ctx.send(embed=embed, view=view)

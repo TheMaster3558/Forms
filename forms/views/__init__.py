@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .forms import FormView
+from .info import LinksView
 from .questions import QuestionsView
 from .permissions import PermissionsView
 from ..database import get_forms, get_questions

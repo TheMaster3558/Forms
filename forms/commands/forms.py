@@ -105,13 +105,13 @@ async def form_create_command(
 @commands.hybrid_command(name='finish', description='Finish a form early.')
 @app_commands.describe(
     message='The link or ID to the message that you can start the form from',
-    send_here='Whether to send the results in this channel'
+    send_here='Whether to send the results in this channel',
 )
 async def form_finish_command(
     ctx: commands.Context[FormsBot], message: discord.Message, send_here: bool = False
 ) -> None:
     await ctx.defer(ephemeral=True)
-    
+
     pool = ctx.bot.pool
     form = await get_form_data(pool, form_id=message.id)
 

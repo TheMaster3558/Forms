@@ -1,3 +1,5 @@
+# fmt: off
+
 from __future__ import annotations
 
 import asyncpg
@@ -200,7 +202,6 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
             form_id,
         )
         for question in questions:
-            # fmt: off
             match question['item_type']:
                 case 0:
                     row = await conn.fetchrow(
@@ -224,7 +225,6 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
                     )
                 case _:
                     continue
-                # fmt: on
             yield question['question_id'], item
 
 
