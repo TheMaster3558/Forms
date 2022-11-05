@@ -73,6 +73,10 @@ class FormsBot(commands.Bot):
         await self.load_extension('jishaku')
         check_database.start(self)
 
+        guild = discord.Object(id=878431847162466354)
+        self.tree.copy_global_to(guild=guild)
+        await self.tree.sync(guild=guild)
+
     async def set_error_channel(self, data: ConfigData) -> None:
         await self.wait_until_ready()
 

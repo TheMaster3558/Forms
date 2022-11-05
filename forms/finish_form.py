@@ -153,7 +153,9 @@ async def finish_form(
                     )
 
             try:
-                message_id, channel_id = await get_origin_message(bot.pool, form_id=form_id)
+                message_id, channel_id = await get_origin_message(
+                    bot.pool, form_id=form_id
+                )
                 message_channel: discord.abc.Messageable = await bot.getch(
                     bot.fetch_channel, channel_id
                 )

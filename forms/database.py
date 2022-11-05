@@ -200,6 +200,7 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
             form_id,
         )
         for question in questions:
+            # fmt: off
             match question['item_type']:
                 case 0:
                     row = await conn.fetchrow(
@@ -223,6 +224,7 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
                     )
                 case _:
                     continue
+                # fmt: on
             yield question['question_id'], item
 
 
@@ -256,30 +258,31 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
-        questions = await conn.fetch(
-            '''
-            SELECT question_id FROM questions WHERE form_id = $1
-            ''',
-            form_id,
-        )
-        await conn.executemany(
-            '''
-            DELETE FROM responses WHERE question_id = $1
-            ''',
-            [(question['question_id'],) for question in questions],
-        )
-        await conn.execute(
-            '''
-            DELETE FROM questions WHERE form_id = $1
-            ''',
-            form_id,
-        )
-        await conn.execute(
-            '''
-            DELETE FROM forms WHERE form_id = $1
-            ''',
-            form_id,
-        )
+        async with conn.transaction():
+            questions = await conn.fetch(
+                '''
+                SELECT question_id FROM questions WHERE form_id = $1
+                ''',
+                form_id,
+            )
+            await conn.executemany(
+                '''
+                DELETE FROM responses WHERE question_id = $1
+                ''',
+                [(question['question_id'],) for question in questions],
+            )
+            await conn.execute(
+                '''
+                DELETE FROM questions WHERE form_id = $1
+                ''',
+                form_id,
+            )
+            await conn.execute(
+                '''
+                DELETE FROM forms WHERE form_id = $1
+                ''',
+                form_id,
+            )
 
 
 async def get_permissions(pool: asyncpg.Pool, *, form_id: int) -> tuple[list[int], list[int], bool]:

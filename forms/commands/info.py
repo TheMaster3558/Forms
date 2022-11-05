@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from ..bot import FormsBot
 
 
-@commands.hybrid_command(name='info', description='Info about the bot.')
+@commands.hybrid_command(name='info', description='Get information about the bot.')
 async def info_command(ctx: commands.Context[FormsBot]) -> None:
     embed = discord.Embed(
         title=f'{ctx.bot.user.name}',

@@ -20,7 +20,7 @@ def check_channel_permissions(
     channel: discord.TextChannel, me: discord.Member
 ) -> str | None:
     if not channel.permissions_for(me).send_messages:
-        return f'I ned permission to send messages in {channel.mention}.'
+        return f'I need permission to send messages in {channel.mention}.'
 
 
 @commands.hybrid_command(name='form', description='Create a form!')
@@ -28,7 +28,7 @@ def check_channel_permissions(
     name='The name of the form',
     channel='The channel to send the form in',
     finishes_in='The hours to finish the form in',
-    responses_channel='The channel to send the form responses in. Defaults to DMs.',
+    responses_channel='The channel to send the form responses in, defaults to DMs',
     anonymous='Whether the form is anonymous',
 )
 @commands.has_permissions(administrator=True)
@@ -47,6 +47,7 @@ async def form_create_command(
         needs_permissions := check_channel_permissions(responses_channel, ctx.me)
     ):
         await ctx.send(needs_permissions, ephemeral=True)
+        return
 
     questions_embed = discord.Embed(
         title=name, description='**Form questions shown below**', color=COLOR
@@ -104,7 +105,7 @@ async def form_create_command(
 @commands.hybrid_command(name='finish', description='Finish a form early.')
 @app_commands.describe(
     message='The link or ID to the message that you can start the form from',
-    send_here='Whether to send the results in this channel or the channel set in /form',
+    send_here='Whether to send the results in this channel'
 )
 async def form_finish_command(
     ctx: commands.Context[FormsBot], message: discord.Message, send_here: bool = False
@@ -131,6 +132,8 @@ async def form_finish_command(
 
 
 @app_commands.context_menu(name='Finish Form')
-async def finish_form_context_menu(interaction: discord.Interaction, message: discord.Message) -> None:
+async def finish_form_context_menu(
+    interaction: discord.Interaction, message: discord.Message
+) -> None:
     ctx = await commands.Context.from_interaction(interaction)
     await form_finish_command(ctx, message)

@@ -8,7 +8,7 @@ from ..constants import COLOR
 
 class HelpCommand(commands.HelpCommand):
     def __init__(self):
-        super().__init__(command_attrs={'description': 'The help command.'})
+        super().__init__(command_attrs={'description': 'The help command for this bot.'})
 
     async def send_bot_help(self, _: Any) -> None:
         embed = discord.Embed(
