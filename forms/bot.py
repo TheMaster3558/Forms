@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import json
 import traceback
+import os
 import sys
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar
 
 import aiofiles
 import aiointeractions
@@ -9,21 +12,30 @@ import asyncpg
 import discord
 from discord.ext import commands
 
+from .constants import CONFIG_PATH
 from .database import init_db
 from .finish_form import check_database
 from .commands.help import HelpCommand
+
+if TYPE_CHECKING:
+    from ._types import ConfigData
 
 
 R = TypeVar('R')
 
 
+def assert_config_exists() -> None:
+    if not os.path.exists(CONFIG_PATH):
+        raise Exception(f'Missing config file {CONFIG_PATH}')
+
+
 async def add_brackets_to_config() -> None:
-    async with aiofiles.open('./forms/config.json', 'w') as f:
+    async with aiofiles.open(CONFIG_PATH, 'w') as f:
         await f.write('{}')
 
 
-async def get_config_data() -> dict[str, Any]:
-    async with aiofiles.open('./forms/config.json', 'r') as f:
+async def get_config_data() -> ConfigData:
+    async with aiofiles.open(CONFIG_PATH, 'r') as f:
         raw = await f.read()
     try:
         return json.loads(raw)
@@ -32,13 +44,14 @@ async def get_config_data() -> dict[str, Any]:
         return await get_config_data()
 
 
-async def write_config_data(data: dict[str, Any]) -> None:
+async def write_config_data(data: ConfigData) -> None:
     dumped = json.dumps(data, indent=4)
-    async with aiofiles.open('./forms/config.json', 'w') as f:
+    async with aiofiles.open(CONFIG_PATH, 'w') as f:
         await f.write(dumped)
 
 
 class FormsBot(commands.Bot):
+    error_channel: discord.abc.Messageable
     pool: asyncpg.Pool
 
     def __init__(self) -> None:
@@ -54,10 +67,19 @@ class FormsBot(commands.Bot):
 
     async def setup_hook(self) -> None:
         await self.load_extension('forms.commands')
+        await self.load_extension('forms.errors')
         await self.load_extension('forms.finish_form')
         await self.load_extension('forms.views')
         await self.load_extension('jishaku')
         check_database.start(self)
+
+    async def set_error_channel(self, data: ConfigData) -> None:
+        await self.wait_until_ready()
+
+        if channel_id := data.get('error_channel'):
+            self.error_channel = await self.getch(self.fetch_channel, channel_id)
+        else:
+            self.error_channel = self.application.owner
 
     async def load_extension(self, name: str, *, package: str | None = None) -> None:
         try:
@@ -71,6 +93,7 @@ class FormsBot(commands.Bot):
         return get(obj_id) or await fetch(obj_id)
 
     async def login(self, *_: Any) -> None:
+        assert_config_exists()
         try:
             data = await get_config_data()
             token: str = data['token']
@@ -81,6 +104,7 @@ class FormsBot(commands.Bot):
         except KeyError as e:
             raise Exception(f'Missing key in config file: {e.args[0]}') from e
 
+        self.loop.create_task(self.set_error_channel(data))
         self.pool = await asyncpg.create_pool(
             host=host, port=port, user=user, password=password
         )

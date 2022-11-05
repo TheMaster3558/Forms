@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
 
 import discord
 
 from .bot import FormsBot
 
 
-def main() -> int:
+def main() -> None:
     parser = argparse.ArgumentParser(prog='forms')
     parser.add_argument(
         '-l',
@@ -49,8 +48,7 @@ def main() -> int:
         asyncio.run(bot.run_with_web())
     else:
         asyncio.run(bot.run_with_gateway())
-    return 0
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

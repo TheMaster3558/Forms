@@ -4,7 +4,7 @@ import discord
 
 
 class PermissionsView(discord.ui.View):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(timeout=600)
         self.users: list[int] = []
         self.roles: list[int] = []

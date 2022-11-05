@@ -22,7 +22,7 @@ class QuestionRemoveSelect(discord.ui.Select):
 
 
 class QuestionsView(discord.ui.View):
-    def __init__(self, creator: discord.abc.Snowflake):
+    def __init__(self, creator: discord.abc.Snowflake) -> None:
         super().__init__(timeout=600)
         self.items: list[Item] = []
         self.creator = creator

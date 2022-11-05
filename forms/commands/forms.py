@@ -28,7 +28,7 @@ def check_channel_permissions(
     name='The name of the form',
     channel='The channel to send the form in',
     finishes_in='The hours to finish the form in',
-    response_channel='The channel to send the form responses in. Defaults to DMs.',
+    responses_channel='The channel to send the form responses in. Defaults to DMs.',
     anonymous='Whether the form is anonymous',
 )
 @commands.has_permissions(administrator=True)
@@ -108,8 +108,7 @@ async def form_create_command(
 )
 async def form_finish_command(
     ctx: commands.Context[FormsBot], message: discord.Message, send_here: bool = False
-):
-    await ctx.defer(ephemeral=True)
+) -> None:
     pool = ctx.bot.pool
     form = await get_form_data(pool, form_id=message.id)
 
@@ -129,3 +128,9 @@ async def form_finish_command(
         channel=channel,
     )
     await ctx.send('Form successfully finished!', ephemeral=True)
+
+
+@app_commands.context_menu(name='Finish Form')
+async def finish_form_context_menu(interaction: discord.Interaction, message: discord.Message) -> None:
+    ctx = await commands.Context.from_interaction(interaction)
+    await form_finish_command(ctx, message)

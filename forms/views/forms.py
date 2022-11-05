@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class FormModal(discord.ui.Modal):
-    def __init__(self, title: str, items: Iterable[Item], form_id: int):
+    def __init__(self, title: str, items: Iterable[Item], form_id: int) -> None:
         super().__init__(title=title)
         for item in items:
             self.add_item(item)
@@ -72,7 +72,7 @@ class FormView(discord.ui.View):
         *,
         finishes_at: float,
         loop: asyncio.AbstractEventLoop,
-    ):
+    ) -> None:
         super().__init__(timeout=None)
         self.items = items
         loop.call_at(finishes_at, loop.create_task, self.disable())

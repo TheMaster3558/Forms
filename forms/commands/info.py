@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
-from .. import __author__
 from ..constants import COLOR
 
 if TYPE_CHECKING:
@@ -21,7 +20,7 @@ async def info_command(ctx: commands.Context[FormsBot]) -> None:
         color=COLOR,
     )
     embed.set_thumbnail(url=ctx.bot.user.avatar.url)
-    embed.add_field(name='Creator', value=__author__)
+    embed.add_field(name='Creator', value=ctx.bot.application.owner.name)
     embed.add_field(
         name='Bot Created',
         value=discord.utils.format_dt(ctx.bot.user.created_at, style='R'),
