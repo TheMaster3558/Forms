@@ -1,11 +1,6 @@
 Welcome to Forms's documentation!
 =================================
 
-Command Prefix
---------------
-``/``
-
-
 Help Command
 ------------
 ``help [command=None]``

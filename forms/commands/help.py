@@ -1,6 +1,7 @@
 from typing import Any
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from ..constants import COLOR
@@ -9,6 +10,9 @@ from ..constants import COLOR
 class HelpCommand(commands.HelpCommand):
     def __init__(self):
         super().__init__(command_attrs={'description': 'The help command for this bot.'})
+
+    async def send_error_message(self, error: str) -> None:
+        await self.context.send(error)
 
     async def send_bot_help(self, _: Any) -> None:
         embed = discord.Embed(
@@ -36,3 +40,12 @@ class HelpCommand(commands.HelpCommand):
         )
         embed.add_field(name='Command Description', value=command.description)
         await self.context.send(embed=embed)
+
+
+@app_commands.command(name='help', description='Use this command for help!')
+@app_commands.describe(command='The command to get help with')
+async def help_command(interaction: discord.Interaction, command: str = None) -> None:
+    ctx = await commands.Context.from_interaction(interaction)
+    help_cmd = ctx.bot.help_command.copy()
+    help_cmd.context = ctx
+    await help_cmd.command_callback(ctx, command=command)
