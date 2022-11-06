@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 import discord
 from discord.ext import commands
 
+from .constants import ERROR_COLOR
+
 if TYPE_CHECKING:
     from .bot import FormsBot
 
@@ -13,8 +15,6 @@ if TYPE_CHECKING:
 async def error_handler(
     ctx: commands.Context[FormsBot], error: commands.CommandError
 ) -> None:
-    channel: discord.abc.Messageable = ctx.channel
-
     if isinstance(error, commands.MissingPermissions):
         missing_perms = ', '.join(
             perm.replace('_', ' ').capitalize() for perm in error.missing_permissions
@@ -22,17 +22,21 @@ async def error_handler(
         embed = discord.Embed(
             title='Missing Permissions',
             description=f'You need to have `{missing_perms}`.',
+            color=ERROR_COLOR
         )
+        await ctx.send(embed=embed)
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send_help(ctx.command)
+    elif isinstance(error, commands.BadArgument):
+        await ctx.send(str(error))
     else:
-        channel = ctx.bot.error_channel
         formatted = '\n'.join(traceback.format_exception(error))
         embed = discord.Embed(
             title='⚠Error⚠',
             description=f'```py\n{formatted}\n```',
+            color=ERROR_COLOR
         )
-
-    embed.color = discord.Color.red()
-    await channel.send(embed=embed)
+        await ctx.bot.error_channel.send(embed=embed)
 
 
 async def setup(bot: FormsBot) -> None:

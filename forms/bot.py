@@ -60,7 +60,7 @@ class FormsBot(commands.Bot):
             command_prefix=commands.when_mentioned,
             intents=intents,
             help_command=HelpCommand(),
-            description='Make forms in your server!',
+            description='**Forms** is a Discord Bot that helps you easily create forms!',
         )
 
         self.app = aiointeractions.InteractionsApp(self)

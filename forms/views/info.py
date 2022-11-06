@@ -2,10 +2,14 @@ from typing import Iterable
 
 import discord
 
+from ..constants import DOCS_LINK, GITHUB_URL, INVITE_URL
+
 
 class LinksView(discord.ui.View):
     links: Iterable[tuple[str, str]] = [
-        ('Documentation', 'https://formsdiscordbot.readthedocs.io/')
+        ('Documentation', DOCS_LINK),
+        ('Invite', INVITE_URL),
+        ('GitHub', GITHUB_URL)
     ]
 
     def __init__(self):
