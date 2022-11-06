@@ -15,7 +15,7 @@ channel: Required[``TextChannel``]
     The channel to send the form in.
 
 finishes_in: Optional[``Number``]
-    The hours to finish the form in
+    The hours to finish the form in.
 
 responses_channel: Optional[``TextChannel``]
     The channel to send the form responses in, defaults to DMs.
