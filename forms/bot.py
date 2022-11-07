@@ -54,6 +54,9 @@ async def write_config_data(data: ConfigData) -> None:
 class FormsBot(commands.Bot):
     error_channel: discord.abc.Messageable
     pool: asyncpg.Pool
+        
+    invite_url: str
+    website_url: str
 
     def __init__(self) -> None:
         intents = discord.Intents.default()
@@ -105,6 +108,9 @@ class FormsBot(commands.Bot):
             password: str = data['password']
         except KeyError as e:
             raise Exception(f'Missing key in config file: {e.args[0]}') from e
+            
+        self.invite_url = data.get('invite_url', '')
+        self.website_url = data.get('website_url', '')
 
         self.loop.create_task(self.set_error_channel(data))
         self.pool = await asyncpg.create_pool(
