@@ -30,7 +30,7 @@ def main() -> None:
         '-g',
         '--gateway',
         help='Whether to the Discord Gateway',
-        default=True,
+        default=False,
         dest='gateway',
         action='store_true',
     )

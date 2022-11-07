@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import datetime
 
-from forms.constants import INVITE_URL, GITHUB_URL
+from forms.constants import INVITE_URL
 
 project = 'Forms'
 author = 'The Master'
@@ -22,9 +22,7 @@ copyright = f'{datetime.datetime.now().year}, {author}'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = [
-    'revitron_sphinx_theme'
-]
+extensions = ['revitron_sphinx_theme']
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -35,16 +33,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'revitron_sphinx_theme'
 html_static_path = ['_static']
-html_theme_options = {
-    'color_scheme': 'dark',
-    'github_url': GITHUB_URL,
-    'logo_mobile': 'images/logo.png'
-}
+html_theme_options = {'color_scheme': 'dark', 'logo_mobile': 'images/logo.png'}
 html_context = {
     'landing_page': {
         'menu': [
             {'title': 'Invite', 'url': INVITE_URL},
-            {'title': 'GitHub', 'url': GITHUB_URL}
         ]
     }
 }

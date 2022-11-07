@@ -76,6 +76,12 @@ Head over to the command menu and select ``finish``.
 
 You have finished the form!
 
+You can also use a command on the message you start the form from.
+
+.. container:: .image
+
+    .. image:: images/context_menu.png
+
 
 What happens when a form ends?
 ------------------------------

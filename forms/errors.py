@@ -22,7 +22,7 @@ async def error_handler(
         embed = discord.Embed(
             title='Missing Permissions',
             description=f'You need to have `{missing_perms}`.',
-            color=ERROR_COLOR
+            color=ERROR_COLOR,
         )
         await ctx.send(embed=embed)
     elif isinstance(error, commands.MissingRequiredArgument):
@@ -32,9 +32,7 @@ async def error_handler(
     else:
         formatted = '\n'.join(traceback.format_exception(error))
         embed = discord.Embed(
-            title='⚠Error⚠',
-            description=f'```py\n{formatted}\n```',
-            color=ERROR_COLOR
+            title='⚠Error⚠', description=f'```py\n{formatted}\n```', color=ERROR_COLOR
         )
         await ctx.bot.error_channel.send(embed=embed)
 

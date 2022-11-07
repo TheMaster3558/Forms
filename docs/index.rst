@@ -2,8 +2,8 @@
   :width: 175
 
 
-Forms Discord Bot Documentation
-===============================
+Forms Discord Bot
+=================
 
 **Forms** is a Discord Bot that helps you easily create forms!
 

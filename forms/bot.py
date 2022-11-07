@@ -12,6 +12,7 @@ import asyncpg
 import discord
 from discord.ext import commands
 
+from .app import get_app
 from .constants import CONFIG_PATH
 from .database import init_db
 from .finish_form import check_database
@@ -62,8 +63,9 @@ class FormsBot(commands.Bot):
             help_command=HelpCommand(),
             description='**Forms** is a Discord Bot that helps you easily create forms!',
         )
-
-        self.app = aiointeractions.InteractionsApp(self)
+        self.app = aiointeractions.InteractionsApp(
+            self, route='/api/interactions', app=get_app()
+        )
 
     async def setup_hook(self) -> None:
         await self.load_extension('forms.commands')
@@ -72,10 +74,6 @@ class FormsBot(commands.Bot):
         await self.load_extension('forms.views')
         await self.load_extension('jishaku')
         check_database.start(self)
-
-        guild = discord.Object(id=878431847162466354)
-        self.tree.copy_global_to(guild=guild)
-        await self.tree.sync(guild=guild)
 
     async def set_error_channel(self, data: ConfigData) -> None:
         await self.wait_until_ready()
