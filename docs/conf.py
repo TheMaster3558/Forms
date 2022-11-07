@@ -12,8 +12,9 @@ sys.path.insert(0, os.path.abspath('..'))
 
 
 import datetime
+import json
 
-from forms.constants import INVITE_URL
+from forms.constants import CONFIG_PATH
 
 project = 'Forms'
 author = 'The Master'
@@ -34,11 +35,20 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'revitron_sphinx_theme'
 html_static_path = ['_static']
 html_theme_options = {'color_scheme': 'dark', 'logo_mobile': 'images/logo.png'}
-html_context = {
-    'landing_page': {
-        'menu': [
-            {'title': 'Invite', 'url': INVITE_URL},
-        ]
+
+try: 
+    with open(CONFIG_PATH, 'r') as f:
+        data = json.load(f)   
+    invite_url = data['invite_url']
+except (FileNotFoundError, KeyError):
+    html_context = {}
+else:
+    html_context = {
+        'landing_page': {
+            'menu': [
+                {'title': 'Invite', 'url': invite_url},
+            ]
+        }
     }
-}
+    
 html_logo = 'images/logo.png'
