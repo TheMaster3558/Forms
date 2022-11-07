@@ -13,3 +13,5 @@ class ConfigData(TypedDict):
     user: str
     password: str
     error_channel: NotRequired[int]
+    invite_url: NotRequired[str]
+    website_url: NotRequired[str]
