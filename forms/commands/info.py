@@ -27,5 +27,5 @@ async def info_command(ctx: commands.Context[FormsBot]) -> None:
         value=discord.utils.format_dt(ctx.bot.user.created_at, style='R'),
     )
 
-    view = LinksView()
+    view = LinksView(ctx.bot)
     await ctx.send(embed=embed, view=view)
