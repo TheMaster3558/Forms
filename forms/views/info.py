@@ -18,5 +18,6 @@ class LinksView(discord.ui.View):
         super().__init__()
 
         for label, attr in self.links:
-            button = discord.ui.Button(label=label, url=getattr(bot, attr))
-            self.add_item(button)
+            if url := getattr(bot, attr):
+                button = discord.ui.Button(label=label, url=url)
+                self.add_item(button)
