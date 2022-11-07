@@ -28,4 +28,4 @@ async def info_command(ctx: commands.Context[FormsBot]) -> None:
     )
 
     view = LinksView(ctx.bot)
-    await ctx.send(embed=embed, view=view)
+    await ctx.send(embed=embed, view=view if view.children else None)
