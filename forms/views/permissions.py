@@ -1,6 +1,9 @@
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 import discord
+
+if TYPE_CHECKING:
+    from .._types import Interaction
 
 
 class PermissionsView(discord.ui.View):
@@ -21,7 +24,7 @@ class PermissionsView(discord.ui.View):
 
     @discord.ui.button(label='Allow Everyone')
     async def allow_everyone(
-        self, interaction: discord.Interaction, button: discord.ui.Button
+        self, interaction: Interaction, button: discord.ui.Button
     ) -> None:
         await interaction.response.send_message('Everyone can take this form.')
         self.everyone = True
@@ -30,7 +33,7 @@ class PermissionsView(discord.ui.View):
 
     @discord.ui.select(cls=discord.ui.UserSelect, min_values=0, max_values=25)
     async def select_users(
-        self, interaction: discord.Interaction, select: discord.ui.UserSelect[Self]
+        self, interaction: Interaction, select: discord.ui.UserSelect[Self]
     ) -> None:
         await interaction.response.defer()
         self.users = [user.id for user in select.values]
@@ -44,7 +47,7 @@ class PermissionsView(discord.ui.View):
 
     @discord.ui.select(cls=discord.ui.RoleSelect, min_values=0, max_values=25)
     async def select_roles(
-        self, interaction: discord.Interaction, select: discord.ui.RoleSelect[Self]
+        self, interaction: Interaction, select: discord.ui.RoleSelect[Self]
     ) -> None:
         await interaction.response.defer()
         self.roles = [role.id for role in select.values]

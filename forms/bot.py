@@ -112,7 +112,7 @@ class FormsBot(commands.Bot):
         self.invite_url = data.get('invite_url', '')
         self.website_url = data.get('website_url', '')
 
-        self.loop.create_task(self.set_error_channel(data))
+        self.loop.create_task(self.set_error_channel(data))  # prevents one api call
         self.pool = await asyncpg.create_pool(
             host=host, port=port, user=user, password=password
         )

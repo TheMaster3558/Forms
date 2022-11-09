@@ -14,6 +14,7 @@ from ..views import FormView, QuestionsView, PermissionsView
 
 if TYPE_CHECKING:
     from ..bot import FormsBot
+    from .._types import Interaction
 
 
 def check_channel_permissions(
@@ -135,7 +136,7 @@ async def form_finish_command(
 
 @app_commands.context_menu(name='Finish Form')
 async def finish_form_context_menu(
-    interaction: discord.Interaction, message: discord.Message
+    interaction: Interaction, message: discord.Message
 ) -> None:
     ctx = await commands.Context.from_interaction(interaction)
     await form_finish_command(ctx, message)

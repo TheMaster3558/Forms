@@ -13,10 +13,8 @@ if TYPE_CHECKING:
 
 
 async def add_persistent_views(bot: FormsBot) -> None:
-    pool = bot.pool
-
-    for form in await get_forms(pool):
-        items = [item async for _, item in get_questions(pool, form_id=form['form_id'])]
+    for form in await get_forms(bot.pool):
+        items = [item async for _, item in get_questions(bot.pool, form_id=form['form_id'])]
         view = FormView(
             items, finishes_at=form['finishes_at'].timestamp(), loop=bot.loop
         )

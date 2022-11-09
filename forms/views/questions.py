@@ -5,18 +5,18 @@ from typing import TYPE_CHECKING, Self
 import discord
 
 if TYPE_CHECKING:
-    from .._types import Item
+    from .._types import Interaction, Item
 
 
 class QuestionsModal(discord.ui.Modal, title='Create a Question'):
     question_name = discord.ui.TextInput(label='Enter the name of the question')
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
+    async def on_submit(self, interaction: Interaction) -> None:
         await interaction.response.defer()
 
 
 class QuestionRemoveSelect(discord.ui.Select):
-    async def callback(self, interaction: discord.Interaction) -> None:
+    async def callback(self, interaction: Interaction) -> None:
         await interaction.response.defer()
         self.view.stop()
 
@@ -29,21 +29,21 @@ class QuestionsView(discord.ui.View):
 
     @staticmethod
     async def send_question_create_modal(
-        interaction: discord.Interaction,
+        interaction: Interaction,
     ) -> QuestionsModal:
         modal = QuestionsModal()
         await interaction.response.send_modal(modal)
         await modal.wait()
         return modal
 
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+    async def interaction_check(self, interaction: Interaction) -> bool:
         return self.creator == interaction.user
 
     @discord.ui.button(
         label='Add Short Answer Question', style=discord.ButtonStyle.gray
     )
     async def short_answer_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+        self, interaction: Interaction, button: discord.ui.Button[Self]
     ) -> None:
         modal = await self.send_question_create_modal(interaction)
         self.items.append(
@@ -58,7 +58,7 @@ class QuestionsView(discord.ui.View):
 
     @discord.ui.button(label='Add Paragraph Question', style=discord.ButtonStyle.gray)
     async def long_answer_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+        self, interaction: Interaction, button: discord.ui.Button[Self]
     ) -> None:
         modal = await self.send_question_create_modal(interaction)
         self.items.append(
@@ -73,7 +73,7 @@ class QuestionsView(discord.ui.View):
 
     @discord.ui.button(label='Finish', style=discord.ButtonStyle.green)
     async def finish_questions(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+        self, interaction: Interaction, button: discord.ui.Button[Self]
     ) -> None:
         await interaction.response.defer()
         self.stop()
@@ -85,7 +85,7 @@ class QuestionsView(discord.ui.View):
 
     @discord.ui.button(label='Remove Question', style=discord.ButtonStyle.red)
     async def remove_question(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+        self, interaction: Interaction, button: discord.ui.Button[Self]
     ) -> None:
         options: list[discord.SelectOption] = []
         for item in self.items:

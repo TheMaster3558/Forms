@@ -9,7 +9,7 @@ from ..constants import COLOR
 from ..database import get_responses_channel, get_permissions, insert_responses
 
 if TYPE_CHECKING:
-    from .._types import Item
+    from .._types import Interaction, Item
 
 
 class FormModal(discord.ui.Modal):
@@ -19,12 +19,11 @@ class FormModal(discord.ui.Modal):
             self.add_item(item)
         self.form_id = form_id
 
-    async def on_submit(self, interaction: discord.Interaction) -> None:
+    async def on_submit(self, interaction: Interaction) -> None:
         await interaction.response.send_message(
             'Your response has been recorded', ephemeral=True
         )
 
-        pool = interaction.client.pool  # type: ignore
         question_ids: list[int] = []
         responses: list[str] = []
 
@@ -37,14 +36,14 @@ class FormModal(discord.ui.Modal):
 
         anonymous = 'not' not in interaction.message.embeds[0].footer.text
         await insert_responses(
-            pool,
+            interaction.client.pool,
             response_time=discord.utils.utcnow(),
             user=str(interaction.user) if not anonymous else None,
             question_ids=question_ids,
             responses=responses,
         )
 
-        channel_id = await get_responses_channel(pool, form_id=interaction.message.id)
+        channel_id = await get_responses_channel(interaction.client.pool, form_id=interaction.message.id)
         if channel_id is not None:
             embed = discord.Embed(timestamp=discord.utils.utcnow(), color=COLOR)
             embed.set_author(
@@ -85,11 +84,10 @@ class FormView(discord.ui.View):
         label='Start Form', style=discord.ButtonStyle.gray, custom_id='start_form'
     )
     async def start_form(
-        self, interaction: discord.Interaction, button: discord.ui.Button[Self]
+        self, interaction: Interaction, button: discord.ui.Button[Self]
     ) -> None:
-        pool = interaction.client.pool  # type: ignore
         users, roles, everyone = await get_permissions(
-            pool, form_id=interaction.message.id
+            interaction.client.pool, form_id=interaction.message.id
         )
 
         if (

@@ -1,8 +1,12 @@
-from typing import NotRequired, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, NotRequired, TypeAlias, TypedDict
 
 import discord
 
+if TYPE_CHECKING:
+    from .bot import FormsBot
 
+
+Color: TypeAlias = int | discord.Color
 Item: TypeAlias = discord.ui.TextInput | discord.ui.Select
 
 
@@ -15,3 +19,10 @@ class ConfigData(TypedDict):
     error_channel: NotRequired[int]
     invite_url: NotRequired[str]
     website_url: NotRequired[str]
+
+
+class Interaction(discord.Interaction):
+    if TYPE_CHECKING:
+        @property
+        def client(self) -> FormsBot:
+            ...

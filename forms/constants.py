@@ -4,10 +4,11 @@ from typing import TYPE_CHECKING
 
 import discord
 
-# sphinx doesn't support typing.Final due to python version
 if TYPE_CHECKING:
-    from typing import Final
+    from ._types import Color
 
-COLOR: Final[int] = 0x2F3136
-CONFIG_PATH: Final[str] = './config.json'
-ERROR_COLOR: Final[discord.Color] = discord.Color.red()
+
+COLOR: Color = 0x2F3136
+ERROR_COLOR: Color = discord.Color.red()
+
+CONFIG_PATH: str = './config.json'

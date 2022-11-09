@@ -24,12 +24,19 @@ async def error_handler(
             description=f'You need to have `{missing_perms}`.',
             color=ERROR_COLOR,
         )
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, ephemeral=True)
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send_help(ctx.command)
     elif isinstance(error, commands.BadArgument):
-        await ctx.send(str(error))
+        await ctx.send(str(error), ephemeral=True)
     else:
+        embed = discord.Embed(
+            title='An unexpected error occurred!',
+            description='It has been reported.',
+            color=ERROR_COLOR
+        )
+        await ctx.send(embed=embed, ephemeral=True)
+
         formatted = '\n'.join(traceback.format_exception(error))
         embed = discord.Embed(
             title='⚠Error⚠', description=f'```py\n{formatted}\n```', color=ERROR_COLOR
