@@ -1,5 +1,3 @@
-# fmt: off
-
 from __future__ import annotations
 
 import asyncio
@@ -8,7 +6,17 @@ import io
 import json
 import threading
 import os
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, IO, Literal, Mapping, ParamSpec, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    IO,
+    Literal,
+    Mapping,
+    ParamSpec,
+    TypeVar,
+)
 
 import orjson
 import discord
@@ -90,14 +98,12 @@ def get_file_size(file: IO) -> int:
 
 
 def get_file_size_limit(premium_tier: Literal[None, 0, 1, 2, 3]) -> int:
-    match premium_tier:
-        case (None | 0 | 1):
-            return 8388608
-        case 2:
-            return 52428800
-        case 3:
-            return 104857600
-    raise ValueError('Invalid premium_tier, must be from 0-3')
+    if premium_tier in (None, 0, 1):
+        return 8388608
+    elif premium_tier == 2:
+        return 52428800
+    else:
+        return 104857600
 
 
 async def finish_form(
@@ -153,7 +159,9 @@ async def finish_form(
             pass
         else:
             buffer = io.BytesIO(json.dumps(data).encode())
-            if get_file_size(buffer) > get_file_size_limit(channel.guild.premium_tier if channel.guild else None):
+            if get_file_size(buffer) > get_file_size_limit(
+                channel.guild.premium_tier if channel.guild else None
+            ):
                 buffer.close()
                 buffer = io.BytesIO(orjson.dumps(data))  # orjson takes up less space
 

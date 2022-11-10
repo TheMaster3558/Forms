@@ -1,5 +1,3 @@
-# fmt: off
-
 from __future__ import annotations
 
 import asyncpg
@@ -60,7 +58,7 @@ async def create_form(
     questions: Iterable[Item],
     allowed_users: list[int],
     allowed_roles: list[int],
-    allow_everyone: bool
+    allow_everyone: bool,
 ) -> None:
     conn: asyncpg.Connection
 
@@ -106,7 +104,7 @@ async def create_form(
                     ''',
                     form_id,
                     form_id + number,
-                    input_type
+                    input_type,
                 )
             await conn.execute(
                 '''
@@ -115,7 +113,7 @@ async def create_form(
                 form_id,
                 allowed_users,
                 allowed_roles,
-                allow_everyone
+                allow_everyone,
             )
 
 
@@ -127,7 +125,7 @@ async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, 
             '''
             SELECT channel_id FROM forms WHERE form_id = $1
             ''',
-            form_id
+            form_id,
         )
         return form_id, row['channel_id']
 
@@ -176,7 +174,7 @@ async def get_finished(pool: asyncpg.Pool) -> list[asyncpg.Record]:
             '''
             SELECT form_name, form_id, response_channel_id, creator_id FROM forms WHERE $1 > finishes_at
             ''',
-            discord.utils.utcnow()
+            discord.utils.utcnow(),
         )
 
 
@@ -191,7 +189,9 @@ async def get_forms(pool: asyncpg.Pool) -> Iterable[asyncpg.Record]:
         )
 
 
-async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[tuple[int, Item], None]:
+async def get_questions(
+    pool: asyncpg.Pool, *, form_id: int
+) -> AsyncGenerator[tuple[int, Item], None]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -202,29 +202,33 @@ async def get_questions(pool: asyncpg.Pool, *, form_id: int) -> AsyncGenerator[t
             form_id,
         )
         for question in questions:
-            match question['item_type']:
-                case 0:
-                    row = await conn.fetchrow(
-                        '''
-                        SELECT input_name, input_type FROM textinputs WHERE question_id = $1
-                        ''',
-                        question['question_id']
-                    )
-                    item = discord.ui.TextInput(label=row['input_name'], style=discord.TextStyle(row['input_type']))
-                case 1:
-                    row = await conn.fetchrow(
-                        '''
-                        SELECT labels, descriptions FROM selects WHERE question_id = $1
-                        ''',
-                        question['question_id']
-                    )
-                    item = discord.ui.Select(
-                        options=[
-                            discord.SelectOption(label=label, description=description) for label, description in zip(row['labels'], row['descriptions'])
-                        ]
-                    )
-                case _:
-                    continue
+            if question['item_type'] == 0:
+                row = await conn.fetchrow(
+                    '''
+                    SELECT input_name, input_type FROM textinputs WHERE question_id = $1
+                    ''',
+                    question['question_id'],
+                )
+                item = discord.ui.TextInput(
+                    label=row['input_name'], style=discord.TextStyle(row['input_type'])
+                )
+            elif question['item_tyoe'] == 1:
+                row = await conn.fetchrow(
+                    '''
+                    SELECT labels, descriptions FROM selects WHERE question_id = $1
+                    ''',
+                    question['question_id'],
+                )
+                item = discord.ui.Select(
+                    options=[
+                        discord.SelectOption(label=label, description=description)
+                        for label, description in zip(
+                            row['labels'], row['descriptions']
+                        )
+                    ]
+                )
+            else:
+                continue
             yield question['question_id'], item
 
 
@@ -285,7 +289,9 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
             )
 
 
-async def get_permissions(pool: asyncpg.Pool, *, form_id: int) -> tuple[list[int], list[int], bool]:
+async def get_permissions(
+    pool: asyncpg.Pool, *, form_id: int
+) -> tuple[list[int], list[int], bool]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -293,6 +299,6 @@ async def get_permissions(pool: asyncpg.Pool, *, form_id: int) -> tuple[list[int
             '''
             SELECT users, roles, everyone FROM permissions WHERE form_id = $1
             ''',
-            form_id
+            form_id,
         )
         return row['users'], row['roles'], row['everyone']

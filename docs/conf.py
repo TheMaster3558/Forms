@@ -35,12 +35,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'revitron_sphinx_theme'
 html_static_path = ['_static']
 html_theme_options = {'color_scheme': 'dark', 'logo_mobile': 'images/logo.png'}
-html_context = {
-        'landing_page': {
-            'menu': [
-            ]
-        }
-    }
+html_context = {'landing_page': {'menu': []}}
 
 os.chdir('..')
 try:
