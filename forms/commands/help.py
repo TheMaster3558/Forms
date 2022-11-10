@@ -1,13 +1,21 @@
-from typing import Any
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
 from ..constants import COLOR
+from ..views import LinksView
+
+if TYPE_CHECKING:
+    from ..bot import FormsBot
 
 
 class HelpCommand(commands.HelpCommand):
+    context: commands.Context[FormsBot]
+
     def __init__(self):
         super().__init__(
             command_attrs={'description': 'The help command for this bot.'}
@@ -26,10 +34,12 @@ class HelpCommand(commands.HelpCommand):
         for command in self.context.bot.commands:
             embed.add_field(
                 name=f'`{self.get_command_signature(command)}`',
-                value=command.description,
+                value=f'{self.context.bot.app_commands[command.name].mention} | {command.description}',
                 inline=False,
             )
-        await self.context.send(embed=embed)
+
+        view = LinksView(self.context.bot)
+        await self.context.send(embed=embed, view=view if view.children else None)
 
     async def send_command_help(
         self, command: commands.Command[None, ..., Any]
@@ -41,6 +51,10 @@ class HelpCommand(commands.HelpCommand):
             color=COLOR,
         )
         embed.add_field(name='Command Description', value=command.description)
+        embed.add_field(
+            name='Slash Command',
+            value=self.context.bot.app_commands[command.name].mention,
+        )
         await self.context.send(embed=embed)
 
 

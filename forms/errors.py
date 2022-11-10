@@ -33,7 +33,7 @@ async def error_handler(
         embed = discord.Embed(
             title='An unexpected error occurred!',
             description='It has been reported.',
-            color=ERROR_COLOR
+            color=ERROR_COLOR,
         )
         await ctx.send(embed=embed, ephemeral=True)
 

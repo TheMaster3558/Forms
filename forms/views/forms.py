@@ -43,7 +43,9 @@ class FormModal(discord.ui.Modal):
             responses=responses,
         )
 
-        channel_id = await get_responses_channel(interaction.client.pool, form_id=interaction.message.id)
+        channel_id = await get_responses_channel(
+            interaction.client.pool, form_id=interaction.message.id
+        )
         if channel_id is not None:
             embed = discord.Embed(timestamp=discord.utils.utcnow(), color=COLOR)
             embed.set_author(

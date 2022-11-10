@@ -22,7 +22,4 @@ class ConfigData(TypedDict):
 
 
 class Interaction(discord.Interaction):
-    if TYPE_CHECKING:
-        @property
-        def client(self) -> FormsBot:
-            ...
+    client: FormsBot

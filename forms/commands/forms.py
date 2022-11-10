@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar
 
 import discord
 from discord.ext import commands
@@ -15,6 +15,23 @@ from ..views import FormView, QuestionsView, PermissionsView
 if TYPE_CHECKING:
     from ..bot import FormsBot
     from .._types import Interaction
+
+
+CoroOrCommandT = TypeVar(
+    'CoroOrCommandT',
+    bound=commands.Command[None, ..., Any] | Callable[..., Awaitable[None]],
+)
+
+
+def needs_administrator(command: CoroOrCommandT) -> CoroOrCommandT:
+    command = app_commands.default_permissions(administrator=True)(command)
+
+    def predicate(ctx: commands.Context[FormsBot]) -> bool:
+        if ctx.interaction:
+            return True
+        return ctx.channel.permissions_for(ctx.author).administrator
+
+    return commands.check(predicate)(command)
 
 
 def check_channel_permissions(
@@ -32,8 +49,7 @@ def check_channel_permissions(
     responses_channel='The channel to send the form responses in, defaults to DMs',
     anonymous='Whether the form is anonymous',
 )
-@commands.has_permissions(administrator=True)
-@app_commands.default_permissions(administrator=True)
+@needs_administrator
 async def form_create_command(
     ctx: commands.Context[FormsBot],
     name: str,
@@ -70,7 +86,10 @@ async def form_create_command(
     finishes_string = discord.utils.format_dt(finishes_dt, style='R')
 
     form_embed = discord.Embed(
-        title=name, description=f'Finishes in {finishes_string}', color=COLOR
+        title=name,
+        description=f'Finishes in {finishes_string}',
+        timestamp=discord.utils.utcnow(),
+        color=COLOR,
     )
     if anonymous:
         form_embed.set_footer(text='This form is anonymous')

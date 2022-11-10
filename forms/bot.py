@@ -54,23 +54,30 @@ async def write_config_data(data: ConfigData) -> None:
 class FormsBot(commands.Bot):
     error_channel: discord.abc.Messageable
     pool: asyncpg.Pool
-        
+
     invite_url: str
     website_url: str
 
+    app_commands: dict[str, discord.app_commands.AppCommand]
+
     def __init__(self) -> None:
-        intents = discord.Intents.default()
+        intents = discord.Intents(guilds=True, messages=True)
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents,
             help_command=HelpCommand(),
             description='**Forms** is a Discord Bot that helps you easily create forms!',
         )
-        self.app = aiointeractions.InteractionsApp(
+        self.interactions_app = aiointeractions.InteractionsApp(
             self, route='/api/interactions', app=get_app()
         )
+        self.interactions_app.app['bot'] = self
 
     async def setup_hook(self) -> None:
+        self.app_commands = {
+            command.name: command for command in await self.tree.fetch_commands()
+        }
+
         await self.load_extension('forms.commands')
         await self.load_extension('forms.errors')
         await self.load_extension('forms.finish_form')
@@ -108,7 +115,7 @@ class FormsBot(commands.Bot):
             password: str = data['password']
         except KeyError as e:
             raise Exception(f'Missing key in config file: {e.args[0]}') from e
-            
+
         self.invite_url = data.get('invite_url', '')
         self.website_url = data.get('website_url', '')
 
@@ -127,7 +134,7 @@ class FormsBot(commands.Bot):
 
     async def run_with_web(self):
         async with self:
-            await self.app.start('')  # token is grabbed from config file
+            await self.interactions_app.start('')  # token is grabbed from config file
 
     async def close(self) -> None:
         await self.pool.close()
