@@ -35,17 +35,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'revitron_sphinx_theme'
 html_static_path = ['_static']
 html_theme_options = {'color_scheme': 'dark', 'logo_mobile': 'images/logo.png'}
-html_context = {'landing_page': {'menu': []}}
 
-os.chdir('..')
 try:
-    with open(CONFIG_PATH, 'r') as f:
+    with open(f'.{CONFIG_PATH}', 'r') as f:
         data = json.load(f)
     invite_url = data['invite_url']
 except (FileNotFoundError, KeyError):
-    pass
-else:
-    html_context['landing_page']['menu'].append({'title': 'Invite', 'url': invite_url})
-os.chdir('./docs')
+    invite_url = 'https://discord.com/api/oauth2/authorize?client_id=1032797461342863431&permissions=2048&scope=applications.commands%20bot'
 
+html_context = {'landing_page': {'menu': [{'title': 'Invite', 'url': invite_url}]}}
 html_logo = 'images/logo.png'

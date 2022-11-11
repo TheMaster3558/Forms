@@ -12,3 +12,4 @@ Forms Discord Bot
 
    `Commands <commands.html>`_
    `Walkthrough <walkthrough.html>`_
+   `TOS + Privacy Policy <tospp.html>`_

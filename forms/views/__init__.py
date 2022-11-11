@@ -6,6 +6,7 @@ from .forms import FormView
 from .info import LinksView
 from .questions import QuestionsView
 from .permissions import PermissionsView
+from .reports import ReportsView
 from ..database import get_forms, get_questions
 
 if TYPE_CHECKING:

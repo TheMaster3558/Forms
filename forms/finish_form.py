@@ -98,7 +98,7 @@ def get_file_size(file: IO) -> int:
 
 
 def get_file_size_limit(premium_tier: Literal[None, 0, 1, 2, 3]) -> int:
-    if premium_tier in (None, 0, 1):
+    if not premium_tier or premium_tier == 1:
         return 8388608
     elif premium_tier == 2:
         return 52428800
@@ -205,7 +205,8 @@ async def finish_form(
 
 
 @tasks.loop(minutes=20)
-async def check_database(bot: FormsBot):
+async def check_database(bot: FormsBot) -> None:
+    await bot.wait_until_ready()
     for form in await get_finished(bot.pool):
         bot.loop.create_task(
             finish_form(

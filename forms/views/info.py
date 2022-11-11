@@ -17,7 +17,7 @@ class LinksView(discord.ui.View):
     def __init__(self, bot: FormsBot):
         super().__init__()
 
-        for label, attr in self.links:
-            if url := getattr(bot, attr):
+        for label, key in self.links:
+            if url := bot.config_data.get(key):
                 button = discord.ui.Button(label=label, url=url)
                 self.add_item(button)
