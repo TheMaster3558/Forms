@@ -14,13 +14,7 @@ from ..views import FormView, QuestionsView, PermissionsView
 
 if TYPE_CHECKING:
     from ..bot import FormsBot
-    from .._types import Interaction
-
-
-CoroOrCommandT = TypeVar(
-    'CoroOrCommandT',
-    bound=commands.Command[None, ..., Any] | Callable[..., Awaitable[None]],
-)
+    from .._types import CoroOrCommandT, Interaction
 
 
 def needs_administrator(command: CoroOrCommandT) -> CoroOrCommandT:
@@ -49,6 +43,7 @@ def check_channel_permissions(
     responses_channel='The channel to send the form responses in, defaults to DMs',
     anonymous='Whether the form is anonymous',
 )
+@commands.cooldown(1, 300, commands.BucketType.guild)
 @needs_administrator
 async def form_create_command(
     ctx: commands.Context[FormsBot],

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import traceback
 from typing import TYPE_CHECKING
 
@@ -29,6 +30,8 @@ async def error_handler(
         await ctx.send_help(ctx.command)
     elif isinstance(error, commands.BadArgument):
         await ctx.send(str(error), ephemeral=True)
+    elif isinstance(error, commands.CommandOnCooldown):
+        await ctx.send(f'This command is on cooldown! Try again in {math.ceil(error.retry_after)} seconds.')
     else:
         embed = discord.Embed(
             title='An unexpected error occurred!',

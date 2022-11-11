@@ -63,7 +63,7 @@ class FormsBot(commands.Bot):
             help_command=HelpCommand(),
             description='**Forms** is a Discord Bot that helps you easily create forms!',
         )
-        self.interactions_app = aiointeractions.InteractionsApp(
+        self.interactions_app: aiointeractions.InteractionsApp = aiointeractions.InteractionsApp(
             self, route='/api/interactions', app=get_app()
         )
         self.interactions_app.app['bot'] = self
@@ -80,9 +80,14 @@ class FormsBot(commands.Bot):
         await self.load_extension('jishaku')
         check_database.start(self)
 
-        self.loop.create_task(self.set_channels(self.config_data))  # prevents one api call
+        self.loop.create_task(
+            self.set_channels(self.config_data)
+        )  # prevents one api call
         self.pool = await asyncpg.create_pool(
-            host=self.config_data['host'], port=self.config_data['port'], user=self.config_data['user'], password=self.config_data['password']
+            host=self.config_data['host'],
+            port=self.config_data['port'],
+            user=self.config_data['user'],
+            password=self.config_data['password'],
         )
         await init_db(self.pool)
 

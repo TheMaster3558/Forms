@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, NotRequired, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, NotRequired, TypeAlias, TypedDict, TypeVar
 
 import discord
+from discord.ext import commands
 
 if TYPE_CHECKING:
     from .bot import FormsBot
@@ -8,6 +9,12 @@ if TYPE_CHECKING:
 
 Color: TypeAlias = int | discord.Color
 Item: TypeAlias = discord.ui.TextInput | discord.ui.Select
+
+
+CoroOrCommandT = TypeVar(
+    'CoroOrCommandT',
+    bound=commands.Command[None, ..., Any] | Callable[..., Awaitable[None]],
+)
 
 
 class ConfigData(TypedDict):

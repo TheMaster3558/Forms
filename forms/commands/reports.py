@@ -14,14 +14,10 @@ if TYPE_CHECKING:
 
 
 @commands.hybrid_command(
-    name='report',
-    description='Report a bug. This is not a support command.'
+    name='report', description='Report a bug. This is not a support command.'
 )
 async def report_command(ctx: commands.Context[FormsBot]) -> None:
-    embed = discord.Embed(
-        title='Click to Start',
-        color=ERROR_COLOR
-    )
+    embed = discord.Embed(title='Click to Start', color=ERROR_COLOR)
 
     view = ReportsView(ctx.author)
     await ctx.send(embed=embed, view=view, ephemeral=True)
@@ -31,7 +27,7 @@ async def report_command(ctx: commands.Context[FormsBot]) -> None:
         title='A report has been submitted',
         description=view.text,
         timestamp=discord.utils.utcnow(),
-        color=ERROR_COLOR
+        color=ERROR_COLOR,
     )
     embed.set_author(name=ctx.author, icon_url=ctx.author.display_avatar.url)
     await ctx.bot.reports_channel.send(embed=embed)
