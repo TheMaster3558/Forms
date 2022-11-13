@@ -35,7 +35,7 @@ from .database import (
     get_questions,
     get_responses,
     get_responses_channel,
-    get_origin_message,
+    get_form_id,
 )
 
 if TYPE_CHECKING:
@@ -109,13 +109,14 @@ def get_file_size_limit(premium_tier: Literal[None, 0, 1, 2, 3]) -> int:
 async def finish_form(
     bot: FormsBot,
     *,
-    form_id: int,
+    guild: discord.abc.Snowflake,
     form_name: str,
     creator_id: int,
     channel: discord.abc.Messageable | None = None,
 ) -> None:
+    form_id = get_form_id(form_name, guild)
     responses: dict[int, list[asyncpg.Record]] = {}
-    questions: dict[int, str] = {}
+    questions: dict[str, str] = {}
     selects_data: dict[str, dict[str, int]] = {}
 
     async for question_id, question in get_questions(bot.pool, form_id=form_id):
@@ -160,7 +161,7 @@ async def finish_form(
         else:
             buffer = io.BytesIO(json.dumps(data).encode())
             if get_file_size(buffer) > get_file_size_limit(
-                channel.guild.premium_tier if channel.guild else None
+                channel.guild.premium_tier if isinstance(channel, discord.abc.GuildChannel) else None
             ):
                 buffer.close()
                 buffer = io.BytesIO(orjson.dumps(data))  # orjson takes up less space
@@ -186,21 +187,6 @@ async def finish_form(
                     await channel.send(
                         embeds=[pie_embed, bar_embed], files=[pie_file, bar_file]
                     )
-
-            try:
-                message_id, channel_id = await get_origin_message(
-                    bot.pool, form_id=form_id
-                )
-                message_channel: discord.abc.Messageable = await bot.getch(
-                    bot.fetch_channel, channel_id
-                )
-                message = await message_channel.fetch_message(message_id)
-
-                view = discord.ui.View.from_message(message)
-                view.children[0].disabled = True  # type: ignore
-                await message.edit(view=view)
-            except discord.HTTPException:
-                pass
     await delete_form(bot.pool, form_id=form_id)
 
 
@@ -211,7 +197,7 @@ async def check_database(bot: FormsBot) -> None:
         bot.loop.create_task(
             finish_form(
                 bot,
-                form_id=form['form_id'],
+                guild=discord.Object(id=form['guild_id']),
                 form_name=form['form_name'],
                 creator_id=form['creator_id'],
             )

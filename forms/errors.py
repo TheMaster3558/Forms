@@ -31,7 +31,9 @@ async def error_handler(
     elif isinstance(error, commands.BadArgument):
         await ctx.send(str(error), ephemeral=True)
     elif isinstance(error, commands.CommandOnCooldown):
-        await ctx.send(f'This command is on cooldown! Try again in {math.ceil(error.retry_after)} seconds.')
+        await ctx.send(
+            f'This command is on cooldown! Try again in {math.ceil(error.retry_after)} seconds.'
+        )
     else:
         embed = discord.Embed(
             title='An unexpected error occurred!',

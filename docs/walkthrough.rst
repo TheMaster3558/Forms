@@ -40,13 +40,13 @@ You will now see this menu. Select users and roles that can take this form or le
 
     .. image:: images/permissions.png
 
-Now the form will be sent in the specified channel.
+Now users can take the form with ``/takeform``.
 
 .. container:: .image
 
     .. image:: images/start_form.png
 
-Users that click on ``Start Form`` will see this.
+Users that start the form will see this.
 
 .. container:: .image
 
@@ -62,25 +62,8 @@ When they submit the form, it will be sent to the responses channel.
 Form Finish
 -----------
 
-Go the message you can start the form from and copy the message link.
-
-.. container:: .image
-
-    .. image:: images/message_link.png
-
-Head over to the command menu and select ``finish``.
-
-.. container:: .image
-
-    .. image:: images/command_menu2.png
-
+Use the ``finish`` command and enter the name of the form.
 You have finished the form!
-
-You can also use a command on the message you start the form from.
-
-.. container:: .image
-
-    .. image:: images/context_menu.png
 
 
 What happens when a form ends?

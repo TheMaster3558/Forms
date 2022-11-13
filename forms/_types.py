@@ -1,4 +1,13 @@
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, NotRequired, TypeAlias, TypedDict, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    NotRequired,
+    TypeAlias,
+    TypedDict,
+    TypeVar,
+)
 
 import discord
 from discord.ext import commands

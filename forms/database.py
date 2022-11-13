@@ -9,6 +9,10 @@ if TYPE_CHECKING:
     from ._types import Item
 
 
+def get_form_id(name: str, guild: discord.abc.Snowflake) -> str:
+    return f'{guild.id}{name}'
+
+
 async def init_db(pool: asyncpg.Pool) -> None:
     conn: asyncpg.Connection
 
@@ -16,32 +20,32 @@ async def init_db(pool: asyncpg.Pool) -> None:
         async with conn.transaction():
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id bigint, channel_id bigint, response_channel_id bigint, creator_id bigint, finishes_at timestamp with time zone)
+                CREATE TABLE IF NOT EXISTS forms (form_name text, form_id text, guild_id bigint, response_channel_id bigint, creator_id bigint, finishes_at timestamp with time zone)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS questions (form_id bigint, question_id bigint, item_type smallint)
+                CREATE TABLE IF NOT EXISTS questions (form_id text, question_id text, item_type smallint)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS textinputs (question_id bigint, input_name text, input_type smallint)
+                CREATE TABLE IF NOT EXISTS textinputs (question_id text, input_name text, input_type smallint)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS selects (question_id bigint, labels text[], descriptions text[])
+                CREATE TABLE IF NOT EXISTS selects (question_id text, labels text[], descriptions text[])
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS responses (question_id bigint, response_time timestamp with time zone, response text, username text)
+                CREATE TABLE IF NOT EXISTS responses (question_id text, response_time timestamp with time zone, response text, username text)
                 '''
             )
             await conn.execute(
                 '''
-                CREATE TABLE IF NOT EXISTS permissions (form_id bigint, users bigint[], roles bigint[], everyone bool)
+                CREATE TABLE IF NOT EXISTS permissions (form_id text, users bigint[], roles bigint[], everyone bool)
                 '''
             )
 
@@ -50,8 +54,8 @@ async def create_form(
     pool: asyncpg.Pool,
     *,
     name: str,
-    form_id: int,
-    channel_id: int,
+    form_id: str,
+    guild_id: int,
     response_channel_id: int | None,
     creator_id: int,
     finishes_at: datetime.datetime,
@@ -70,12 +74,13 @@ async def create_form(
                 ''',
                 name,
                 form_id,
-                channel_id,
+                guild_id,
                 response_channel_id,
                 creator_id,
                 finishes_at,
             )
             for number, question in enumerate(questions):
+                number = str(number)
                 if isinstance(question, discord.ui.TextInput):
                     await conn.execute(
                         '''
@@ -117,25 +122,12 @@ async def create_form(
             )
 
 
-async def get_origin_message(pool: asyncpg.Pool, *, form_id: int) -> tuple[int, int]:
-    conn: asyncpg.Connection
-
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            '''
-            SELECT channel_id FROM forms WHERE form_id = $1
-            ''',
-            form_id,
-        )
-        return form_id, row['channel_id']
-
-
 async def insert_responses(
     pool: asyncpg.Pool,
     *,
     response_time: datetime.datetime,
     user: str,
-    question_ids: Iterable[int],
+    question_ids: Iterable[str],
     responses: Iterable[str],
 ) -> None:
     conn: asyncpg.Connection
@@ -153,7 +145,7 @@ async def insert_responses(
         )
 
 
-async def get_responses_channel(pool: asyncpg.Pool, *, form_id: int) -> int | None:
+async def get_responses_channel(pool: asyncpg.Pool, *, form_id: str) -> int | None:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -172,26 +164,31 @@ async def get_finished(pool: asyncpg.Pool) -> list[asyncpg.Record]:
     async with pool.acquire() as conn:
         return await conn.fetch(
             '''
-            SELECT form_name, form_id, response_channel_id, creator_id FROM forms WHERE $1 > finishes_at
+            SELECT form_name, guild_id, response_channel_id, creator_id FROM forms WHERE $1 > finishes_at
             ''',
             discord.utils.utcnow(),
         )
 
 
-async def get_forms(pool: asyncpg.Pool) -> Iterable[asyncpg.Record]:
+async def get_forms(
+    pool: asyncpg.Pool, *, guild_id: int | None = None
+) -> Iterable[asyncpg.Record]:
     conn: asyncpg.Connection
 
+    sql = 'SELECT form_name, form_id, finishes_at FROM forms'
+    args = []
+
+    if guild_id:
+        sql += ' WHERE guild_id = $1'
+        args.append(guild_id)
+
     async with pool.acquire() as conn:
-        return await conn.fetch(
-            '''
-            SELECT form_id, finishes_at FROM forms
-            '''
-        )
+        return await conn.fetch(sql, *args)
 
 
 async def get_questions(
-    pool: asyncpg.Pool, *, form_id: int
-) -> AsyncGenerator[tuple[int, Item], None]:
+    pool: asyncpg.Pool, *, form_id: str
+) -> AsyncGenerator[tuple[str, Item], None]:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -233,7 +230,7 @@ async def get_questions(
 
 
 async def get_responses(
-    pool: asyncpg.Pool, *, question_id: int
+    pool: asyncpg.Pool, *, question_id: str
 ) -> list[asyncpg.Record]:
     conn: asyncpg.Connection
 
@@ -246,7 +243,7 @@ async def get_responses(
         )
 
 
-async def get_form_data(pool: asyncpg.Pool, *, form_id: int) -> asyncpg.Record:
+async def get_form_data(pool: asyncpg.Pool, *, form_id: str) -> asyncpg.Record:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -258,7 +255,7 @@ async def get_form_data(pool: asyncpg.Pool, *, form_id: int) -> asyncpg.Record:
         )
 
 
-async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
+async def delete_form(pool: asyncpg.Pool, *, form_id: str) -> None:
     conn: asyncpg.Connection
 
     async with pool.acquire() as conn:
@@ -290,7 +287,7 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: int) -> None:
 
 
 async def get_permissions(
-    pool: asyncpg.Pool, *, form_id: int
+    pool: asyncpg.Pool, *, form_id: str
 ) -> tuple[list[int], list[int], bool]:
     conn: asyncpg.Connection
 
@@ -302,3 +299,12 @@ async def get_permissions(
             form_id,
         )
         return row['users'], row['roles'], row['everyone']
+
+
+async def can_take_form(
+    pool: asyncpg.Pool, *, member: discord.Member, form_id: str
+) -> bool:
+    users, roles, everyone = await get_permissions(pool, form_id=form_id)
+    return (
+        member.id in users or any(role.id in roles for role in member.roles) or everyone
+    )

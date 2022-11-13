@@ -16,7 +16,6 @@ from .app import get_app
 from .constants import CONFIG_PATH
 from .database import init_db
 from .finish_form import check_database
-from .commands.help import HelpCommand
 
 if TYPE_CHECKING:
     from ._types import ConfigData
@@ -60,11 +59,12 @@ class FormsBot(commands.Bot):
         super().__init__(
             command_prefix=commands.when_mentioned,
             intents=intents,
-            help_command=HelpCommand(),
             description='**Forms** is a Discord Bot that helps you easily create forms!',
         )
-        self.interactions_app: aiointeractions.InteractionsApp = aiointeractions.InteractionsApp(
-            self, route='/api/interactions', app=get_app()
+        self.interactions_app: aiointeractions.InteractionsApp = (
+            aiointeractions.InteractionsApp(
+                self, route='/api/interactions', app=get_app()
+            )
         )
         self.interactions_app.app['bot'] = self
 
@@ -76,7 +76,6 @@ class FormsBot(commands.Bot):
         await self.load_extension('forms.commands')
         await self.load_extension('forms.errors')
         await self.load_extension('forms.finish_form')
-        await self.load_extension('forms.views')
         await self.load_extension('jishaku')
         check_database.start(self)
 

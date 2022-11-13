@@ -4,30 +4,29 @@ from typing import TYPE_CHECKING
 
 import discord
 from discord import app_commands
-from discord.ext import commands
 
 from ..constants import ERROR_COLOR
-from ..views import ReportsView
+from ..views import ReportsModal
 
 if TYPE_CHECKING:
-    from ..bot import FormsBot
+    from .._types import Interaction
 
 
-@commands.hybrid_command(
+@app_commands.command(
     name='report', description='Report a bug. This is not a support command.'
 )
-async def report_command(ctx: commands.Context[FormsBot]) -> None:
-    embed = discord.Embed(title='Click to Start', color=ERROR_COLOR)
-
-    view = ReportsView(ctx.author)
-    await ctx.send(embed=embed, view=view, ephemeral=True)
-    await view.wait()
+async def report_command(interaction: Interaction) -> None:
+    modal = ReportsModal()
+    await interaction.response.send_modal(modal)
+    await modal.wait()
 
     embed = discord.Embed(
         title='A report has been submitted',
-        description=view.text,
+        description=modal.text.value,
         timestamp=discord.utils.utcnow(),
         color=ERROR_COLOR,
     )
-    embed.set_author(name=ctx.author, icon_url=ctx.author.display_avatar.url)
-    await ctx.bot.reports_channel.send(embed=embed)
+    embed.set_author(
+        name=interaction.user, icon_url=interaction.user.display_avatar.url
+    )
+    await interaction.client.reports_channel.send(embed=embed)
