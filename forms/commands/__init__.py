@@ -16,4 +16,3 @@ async def setup(bot: FormsBot) -> None:
     bot.tree.add_command(take_form_command)
     bot.tree.add_command(info_command)
     bot.tree.add_command(report_command)
-    bot.tree.add_command(help_command)

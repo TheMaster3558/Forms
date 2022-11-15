@@ -36,6 +36,7 @@ class ConfigData(TypedDict):
     reports_channel: NotRequired[int]
     invite_url: NotRequired[str]
     website_url: NotRequired[str]
+    ngrok_auth_token: NotRequired[str]
 
 
 class Interaction(discord.Interaction):

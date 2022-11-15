@@ -4,3 +4,4 @@ aiofiles
 aiointeractions
 jishaku; python_version < "3.11"
 matplotlib
+pyngrok

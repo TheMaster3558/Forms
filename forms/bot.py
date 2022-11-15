@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import traceback
-import os
 import sys
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, TypeVar
 
@@ -11,6 +11,7 @@ import aiointeractions
 import asyncpg
 import discord
 from discord.ext import commands
+from pyngrok import ngrok
 
 from .app import get_app
 from .constants import CONFIG_PATH
@@ -48,6 +49,7 @@ async def write_config_data(data: ConfigData) -> None:
 class FormsBot(commands.Bot):
     error_channel: discord.abc.Messageable
     reports_channel: discord.abc.Messageable
+    port: int
 
     pool: asyncpg.Pool
 
@@ -82,6 +84,7 @@ class FormsBot(commands.Bot):
         self.loop.create_task(
             self.set_channels(self.config_data)
         )  # prevents one api call
+        self.loop.create_task(self.set_website())
         self.pool = await asyncpg.create_pool(
             host=self.config_data['host'],
             port=self.config_data['port'],
@@ -91,13 +94,14 @@ class FormsBot(commands.Bot):
         await init_db(self.pool)
 
     async def set_channels(self, data: ConfigData) -> None:
-        await self.wait_until_ready()
+        await asyncio.sleep(3)
+        if not self.interactions_app.is_running():
+            await self.wait_until_ready()
 
         if channel_id := data.get('error_channel'):
             self.error_channel = await self.getch(self.fetch_channel, channel_id)
         else:
             self.error_channel = self.application.owner
-
         if channel_id := data.get('reports_channel'):
             self.reports_channel = await self.getch(self.fetch_channel, channel_id)
         else:
@@ -123,9 +127,17 @@ class FormsBot(commands.Bot):
             await self.login()
             await self.connect(reconnect=reconnect)
 
-    async def run_with_web(self):
+    async def set_website(self) -> None:
+        await asyncio.sleep(5)
+        ngrok.set_auth_token(self.config_data['ngrok_auth_token'])
+        tunnel = ngrok.connect(self.port)
+        self.config_data['website_url'] = tunnel.public_url
+        await self.error_channel.send(self.config_data['website_url'])
+
+    async def run_with_web(self, port: int = 8080) -> None:
         async with self:
-            await self.interactions_app.start('')  # token is grabbed from config file
+            self.port = port
+            await self.interactions_app.start('', port=port)  # token is grabbed from config file
 
     async def close(self) -> None:
         await self.pool.close()
