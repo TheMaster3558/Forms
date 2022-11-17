@@ -34,12 +34,21 @@ def main() -> None:
         dest='gateway',
         action='store_true',
     )
+    parser.add_argument(
+        '-n',
+        '--use-ngrok',
+        help='Whether to start a ngrok tunnel with the web server',
+        default=False,
+        dest='ngrok',
+        action='store_true'
+    )
     args = parser.parse_args()
 
     if args.logging:
         discord.utils.setup_logging()
 
     bot = FormsBot()
+    bot.use_ngrok = args.ngrok
 
     if args.web and args.gateway:
         raise TypeError('Cannot use both --web and --gateway')

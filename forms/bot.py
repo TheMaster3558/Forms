@@ -69,6 +69,7 @@ class FormsBot(commands.Bot):
             )
         )
         self.interactions_app.app['bot'] = self
+        self.use_ngrok: bool = False
 
     async def setup_hook(self) -> None:
         self.app_commands = {
@@ -129,9 +130,10 @@ class FormsBot(commands.Bot):
 
     async def set_website(self) -> None:
         await asyncio.sleep(5)
-        ngrok.set_auth_token(self.config_data['ngrok_auth_token'])
-        tunnel = ngrok.connect(self.port)
-        self.config_data['website_url'] = tunnel.public_url
+        if self.use_ngrok:
+            ngrok.set_auth_token(self.config_data['ngrok_auth_token'])
+            tunnel = ngrok.connect(self.port)
+            self.config_data['website_url'] = tunnel.public_url
         await self.error_channel.send(self.config_data['website_url'])
 
     async def run_with_web(self, port: int = 8080) -> None:
