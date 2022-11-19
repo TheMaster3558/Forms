@@ -50,11 +50,10 @@ class FormsBot(commands.Bot):
     error_channel: discord.abc.Messageable
     reports_channel: discord.abc.Messageable
     port: int
-
     pool: asyncpg.Pool
-
     config_data: ConfigData
     app_commands: dict[str, discord.app_commands.AppCommand]
+    set_channels_task: asyncio.Task[None]
 
     def __init__(self) -> None:
         intents = discord.Intents(guilds=True, messages=True)
@@ -82,7 +81,7 @@ class FormsBot(commands.Bot):
         await self.load_extension('jishaku')
         check_database.start(self)
 
-        self.loop.create_task(
+        self.set_channels_task = self.loop.create_task(
             self.set_channels(self.config_data)
         )  # prevents one api call
         self.loop.create_task(self.set_website())
@@ -129,7 +128,7 @@ class FormsBot(commands.Bot):
             await self.connect(reconnect=reconnect)
 
     async def set_website(self) -> None:
-        await asyncio.sleep(5)
+        await self.set_channels_task
         if self.use_ngrok:
             ngrok.set_auth_token(self.config_data['ngrok_auth_token'])
             tunnel = ngrok.connect(self.port)
