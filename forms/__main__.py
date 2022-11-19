@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 import asyncio
 
@@ -40,7 +38,7 @@ def main() -> None:
         help='Whether to start a ngrok tunnel with the web server',
         default=False,
         dest='ngrok',
-        action='store_true'
+        action='store_true',
     )
     args = parser.parse_args()
 

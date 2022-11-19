@@ -19,19 +19,7 @@ from ..finish_form import finish_form
 from ..views import FormModal, QuestionsView, PermissionsView
 
 if TYPE_CHECKING:
-    from ..bot import FormsBot
-    from .._types import CoroOrCommandT, Interaction
-
-
-def needs_administrator(command: CoroOrCommandT) -> CoroOrCommandT:
-    command = app_commands.default_permissions(administrator=True)(command)
-
-    def predicate(ctx: commands.Context[FormsBot]) -> bool:
-        if ctx.interaction:
-            return True
-        return ctx.channel.permissions_for(ctx.author).administrator
-
-    return commands.check(predicate)(command)
+    from .._types import Interaction
 
 
 def check_channel_permissions(
@@ -48,7 +36,7 @@ def check_channel_permissions(
     responses_channel='The channel to send the form responses in, defaults to DMs',
 )
 @commands.cooldown(1, 300, commands.BucketType.guild)
-@needs_administrator
+@app_commands.default_permissions(administrator=True)
 async def form_create_command(
     interaction: Interaction,
     name: str,

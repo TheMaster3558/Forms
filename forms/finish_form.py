@@ -161,7 +161,9 @@ async def finish_form(
         else:
             buffer = io.BytesIO(json.dumps(data).encode())
             if get_file_size(buffer) > get_file_size_limit(
-                channel.guild.premium_tier if isinstance(channel, discord.abc.GuildChannel) else None
+                channel.guild.premium_tier
+                if isinstance(channel, discord.abc.GuildChannel)
+                else None
             ):
                 buffer.close()
                 buffer = io.BytesIO(orjson.dumps(data))  # orjson takes up less space

@@ -138,7 +138,9 @@ class FormsBot(commands.Bot):
     async def run_with_web(self, port: int = 8080) -> None:
         async with self:
             self.port = port
-            await self.interactions_app.start('', port=port)  # token is grabbed from config file
+            await self.interactions_app.start(
+                '', port=port
+            )  # token is grabbed from config file
 
     async def close(self) -> None:
         await self.pool.close()

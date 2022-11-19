@@ -255,6 +255,21 @@ async def get_form_data(pool: asyncpg.Pool, *, form_id: str) -> asyncpg.Record:
         )
 
 
+async def get_permissions(
+    pool: asyncpg.Pool, *, form_id: str
+) -> tuple[list[int], list[int], bool]:
+    conn: asyncpg.Connection
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            '''
+            SELECT users, roles, everyone FROM permissions WHERE form_id = $1
+            ''',
+            form_id,
+        )
+        return row['users'], row['roles'], row['everyone']
+
+
 async def delete_form(pool: asyncpg.Pool, *, form_id: str) -> None:
     conn: asyncpg.Connection
 
@@ -284,21 +299,6 @@ async def delete_form(pool: asyncpg.Pool, *, form_id: str) -> None:
                 ''',
                 form_id,
             )
-
-
-async def get_permissions(
-    pool: asyncpg.Pool, *, form_id: str
-) -> tuple[list[int], list[int], bool]:
-    conn: asyncpg.Connection
-
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            '''
-            SELECT users, roles, everyone FROM permissions WHERE form_id = $1
-            ''',
-            form_id,
-        )
-        return row['users'], row['roles'], row['everyone']
 
 
 async def can_take_form(

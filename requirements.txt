@@ -2,6 +2,6 @@ discord.py
 asyncpg
 aiofiles
 aiointeractions
-jishaku; python_version < "3.11"
+#jishaku
 matplotlib
 pyngrok
