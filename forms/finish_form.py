@@ -153,9 +153,9 @@ async def finish_form(
     if channel is None:
         try:
             if response_channel_id is None:
-                channel = await bot.getch(bot.fetch_user, creator_id)
+                channel = await bot.getch(bot.get_user, creator_id)
             else:
-                channel = await bot.getch(bot.fetch_channel, response_channel_id)
+                channel = await bot.getch(bot.get_channel, response_channel_id)
         except discord.HTTPException:
             pass
         else:

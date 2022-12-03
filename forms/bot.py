@@ -93,17 +93,22 @@ class FormsBot(commands.Bot):
         )
         await init_db(self.pool)
 
+    @staticmethod
+    async def getch(get: Callable[[int], R | None], obj_id: int) -> R:
+        fetch: Callable[[int], Awaitable[R]] = getattr(get.__self__, get.__name__.replace('get', 'fetch'))  # type: ignore
+        return get(obj_id) or fetch(obj_id)
+
     async def set_channels(self, data: ConfigData) -> None:
         await asyncio.sleep(3)
         if not self.interactions_app.is_running():
             await self.wait_until_ready()
 
         if channel_id := data.get('error_channel'):
-            self.error_channel = await self.getch(self.fetch_channel, channel_id)
+            self.error_channel = await self.getch(self.get_channel, channel_id)
         else:
             self.error_channel = self.application.owner
         if channel_id := data.get('reports_channel'):
-            self.reports_channel = await self.getch(self.fetch_channel, channel_id)
+            self.reports_channel = await self.getch(self.get_channel, channel_id)
         else:
             self.reports_channel = self.application.owner
 
@@ -113,10 +118,6 @@ class FormsBot(commands.Bot):
         except commands.ExtensionError as exc:
             print(f'Failed to load extension: {name}', file=sys.stderr)
             traceback.print_exception(exc, file=sys.stderr)
-
-    async def getch(self, fetch: Callable[[int], Awaitable[R]], obj_id: int) -> R:
-        get: Callable[[int], R] = getattr(self, fetch.__name__.replace('fetch', 'get'))
-        return get(obj_id) or await fetch(obj_id)
 
     async def login(self, *_: Any) -> None:
         self.config_data = await get_config_data()

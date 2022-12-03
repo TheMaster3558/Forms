@@ -169,4 +169,5 @@ async def form_name_autocomplete(
             form_id=f'{interaction.guild.id}{form_name}',
         ) and form_name.lower().startswith(current):
             options.append(app_commands.Choice(name=form_name, value=form_name))
+
     return options
