@@ -53,7 +53,9 @@ class FormModal(discord.ui.Modal):
                     name=child.label, value=discord.utils.escape_markdown(child.value)
                 )
             try:
-                channel = interaction.client.getch(interaction.guild.get_channel, channel_id)
+                channel = interaction.client.getch(
+                    interaction.guild.get_channel, channel_id
+                )
             except discord.HTTPException:
                 return
             await channel.send(embed=embed)  # type: ignore
